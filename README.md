@@ -33,8 +33,7 @@ Install using [lazy.nvim](https://github.com/folke/lazy.nvim)
 
 ```lua
 {
-  "ryanburda/trail_marker.nvim",
-  dependencies = { "nvim-lua/plenary.nvim" },
+  "ryanburda/trail_marker.nvim"
 }
 ```
 
@@ -47,58 +46,72 @@ your config.
 ```lua
 vim.keymap.set(
   'n',
-  <leader>tm,
+  '<leader>tm',
   require("trail_marker").trail_map,
   { desc = "Trail Markers: List markers on current trail" }
 )
 
 vim.keymap.set(
   'n',
-  <leader>ta,
+  '<leader>ta',
   require("trail_marker").place_marker,
   { desc = "Trail Markers: Add marker to current trail" }
 )
 
 vim.keymap.set(
   'n',
-  <leader>tj,
+  '<leader>tj',
   require("trail_marker").next_marker,
   { desc = "Trail Markers: Go to next marker" }
 )
 
 vim.keymap.set(
   'n',
-  <leader>tk,
+  '<leader>tk',
   require("trail_marker").prev_marker,
   { desc = "Trail Markers: Go to previous marker" }
 )
 
 vim.keymap.set(
   'n',
-  <leader>tgg,
+  '<leader>tgg',
   require("trail_marker").trail_head,
   { desc = "Trail Markers: Go to start of trail" }
 )
 
 vim.keymap.set(
   'n',
-  <leader>tG,
+  '<leader>tG',
   require("trail_marker").trail_end,
   { desc = "Trail Markers: Go to end of trail" }
 )
 
 vim.keymap.set(
   'n',
-  <leader>tn,
+  '<leader>tn',
   require("trail_marker").new_trail,
   { desc = "Trail Markers: Start a new trail" }
 )
 
 vim.keymap.set(
   'n',
-  <leader>tc,
+  '<leader>tc',
   require("trail_marker").change_trail,
   { desc = "Trail Markers: Change trails" }
+)
+
+vim.keymap.set(
+  'n',
+  '<leader>tx',
+  require("trail_marker").clear_trail,
+  { desc = "Trail Markers: Remove all markers from trail" }
+)
+
+vim.keymap.set(
+  'n',
+  '<leader>tv',
+  require("trail_marker").virtual_text_toggle,
+  { desc = "Trail Markers: Toggle virtual text" }
 )
 ```
 

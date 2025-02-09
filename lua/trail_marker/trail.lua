@@ -8,58 +8,63 @@ function Trail.new(name)
   local self = setmetatable({}, Trail)
 
   self.name = name
-  self.trail = {}
+  self.markers = {}
   self.trail_pos = 0
 
   return self
 end
 
 function Trail:trail_map()
-  print(vim.inspect(self.trail))
+  print(vim.inspect(self.markers))
 end
 
 function Trail:place_marker()
   self.trail_pos = self.trail_pos + 1
   local b = marker.new()
 
-  table.insert(self.trail, self.trail_pos, b)
+  table.insert(self.markers, self.trail_pos, b)
 end
 
 function Trail:remove_marker(pos)
-  if 0 < pos and pos <= #self.trail then
-    table.remove(self.trail, pos)
+  if 0 < pos and pos <= #self.markers then
+    table.remove(self.markers, pos)
   end
 
-  if not(pos == 1 and self.trail_pos == 1 and #self.trail > 1) then
+  if not(pos == 1 and self.trail_pos == 1 and #self.markers > 1) then
     self.trail_pos = self.trail_pos - 1
   end
 end
 
-function Trail:update_position(pos)
-  if 0 < pos and pos <= #self.trail then
+function Trail:goto_marker(pos)
+  if 0 < pos and pos <= #self.markers then
     self.trail_pos = pos
-    self.trail[self.trail_pos]:goto()
+    self.markers[self.trail_pos]:goto()
   end
 end
 
 function Trail:current_marker()
-  self:update_position(self.trail_pos)
+  self:goto_marker(self.trail_pos)
 end
 
 function Trail:next_marker()
-  self:update_position(self.trail_pos + 1)
+  self:goto_marker(self.trail_pos + 1)
 end
 
 function Trail:prev_marker()
-  self:update_position(self.trail_pos - 1)
+  self:goto_marker(self.trail_pos - 1)
 end
 
 function Trail:trail_head()
-  self:update_position(1)
+  self:goto_marker(1)
 end
 
 function Trail:trail_end()
-  self:update_position(#self.trail)
+  self:goto_marker(#self.markers)
+end
+
+function Trail:clear_trail()
+  self.markers = {}
+  self.trail_pos = 0
 end
 
 return Trail
