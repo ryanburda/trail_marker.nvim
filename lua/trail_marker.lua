@@ -1,5 +1,4 @@
 -- This is the api of the plugin.
-local marker = require("trail_marker.marker")
 local trail = require("trail_marker.trail")
 
 local M = {}
@@ -11,12 +10,7 @@ M.trail_map = function()
 end
 
 M.place_marker = function()
-  local row, col = unpack(vim.api.nvim_win_get_cursor(0))
-  local path = vim.api.nvim_buf_get_name(0)
-
-  local b = marker.new(row, col, path)
-
-  M.trail:place_marker(b)
+  M.trail:place_marker()
 end
 
 M.current_marker = function()

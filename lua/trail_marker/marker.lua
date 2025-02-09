@@ -2,12 +2,11 @@
 local Marker = {}
 Marker.__index = Marker
 
-function Marker.new(row, col, path)
+function Marker.new()
   local self = setmetatable({}, Marker)
 
-  self.row = row
-  self.col = col
-  self.path = path
+  self.row, self.col = unpack(vim.api.nvim_win_get_cursor(0))
+  self.path = vim.api.nvim_buf_get_name(0)
 
   return self
 end

@@ -1,4 +1,6 @@
 -- Multiple markers make a trail.
+local marker = require("trail_marker.marker")
+
 local Trail = {}
 Trail.__index = Trail
 
@@ -16,8 +18,10 @@ function Trail:trail_map()
   print(vim.inspect(self.trail))
 end
 
-function Trail:place_marker(b)
+function Trail:place_marker()
   self.trail_pos = self.trail_pos + 1
+  local b = marker.new()
+
   table.insert(self.trail, self.trail_pos, b)
 end
 
