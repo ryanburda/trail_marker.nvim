@@ -42,6 +42,9 @@ function Trail:build_marker_map()
   The list of markers will still be used to preserve the order of markings.
   This table will make it easier to remove markers and handle virtual text.
 
+  The cost of maintaining two different representations of the same data should pay off by avoiding situations
+  where we need to rip through the entire markers list to perform an operation.
+
   NOTE: it is important to call this function whenever the set of markers changes to keep the list and map in sync.
 
   Transform the `Trail.marker_list` table that looks like this (list of dictionaries):
@@ -155,9 +158,31 @@ function Trail:remove_marker(pos)
 end
 
 function Trail:remove_marker_at_location()
-  local markers = self:get_markers_at_location()
-  if markers ~= nil then
-    self:remove_marker(markers[1])  -- TODO: prompt for user selection when more than one marker on line
+  local marker_positions = self:get_markers_at_location()
+
+  if marker_positions ~= nil then
+    if #marker_positions > 1 then
+      -- ask user which mark should be removed if there are multiple.
+      local opts = {
+        prompt = string.format(
+          "Which mark should be removed? Current Position-%s Options-(%s): ",
+          self.trail_pos,
+          table.concat(marker_positions, ',')
+        ),
+      }
+
+      local function on_input(input)
+        for _, marker_position in ipairs(marker_positions) do
+          if marker_position == tonumber(input) then
+            self:remove_marker(marker_position)
+          end
+        end
+      end
+
+      vim.ui.input(opts, on_input)
+    else
+      self:remove_marker(marker_positions[1])
+    end
   end
 end
 
@@ -216,7 +241,7 @@ function Trail:virtual_text_update_bufnr(bufnr)
           self.ns_id,
           row-1,
           0,
-          { virt_text = {{dict.virtual_text, "StatusLine"}}, virt_text_pos = 'right_align', }
+          { virt_text = {{dict.virtual_text, "WinBar"}}, virt_text_pos = 'right_align', }
         )
       end
     end
