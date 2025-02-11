@@ -14,10 +14,7 @@ M.place_marker = function()
 end
 
 M.remove_marker = function()
-  local markers = M.trail:get_markers_at_location()
-  if markers ~= nil then
-    M.trail:remove_marker(markers[1])  -- TODO: prompt for user selection when more than one marker on line
-  end
+  M.trail:remove_marker_at_location()
 end
 
 M.current_marker = function()

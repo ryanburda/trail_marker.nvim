@@ -48,14 +48,21 @@ vim.keymap.set(
   'n',
   '<leader>tm',
   require("trail_marker").trail_map,
-  { desc = "Trail Markers: List markers on current trail" }
+  { desc = "Trail Markers: List markers on trail" }
 )
 
 vim.keymap.set(
   'n',
   '<leader>ta',
   require("trail_marker").place_marker,
-  { desc = "Trail Markers: Add marker to current trail" }
+  { desc = "Trail Markers: Add marker to trail" }
+)
+
+vim.keymap.set(
+  'n',
+  '<leader>td',
+  require("trail_marker").remove_marker,
+  { desc = "Trail Markers: Remove marker in current cursor position from trail" }
 )
 
 vim.keymap.set(
@@ -88,20 +95,6 @@ vim.keymap.set(
 
 vim.keymap.set(
   'n',
-  '<leader>tn',
-  require("trail_marker").new_trail,
-  { desc = "Trail Markers: Start a new trail" }
-)
-
-vim.keymap.set(
-  'n',
-  '<leader>tc',
-  require("trail_marker").change_trail,
-  { desc = "Trail Markers: Change trails" }
-)
-
-vim.keymap.set(
-  'n',
   '<leader>tx',
   require("trail_marker").clear_trail,
   { desc = "Trail Markers: Remove all markers from trail" }
@@ -112,6 +105,20 @@ vim.keymap.set(
   '<leader>tv',
   require("trail_marker").virtual_text_toggle,
   { desc = "Trail Markers: Toggle virtual text" }
+)
+
+vim.keymap.set(
+  'n',
+  '<leader>tn',
+  require("trail_marker").new_trail,
+  { desc = "Trail Markers: Start a new trail" }
+)
+
+vim.keymap.set(
+  'n',
+  '<leader>tc',
+  require("trail_marker").change_trail,
+  { desc = "Trail Markers: Change trails" }
 )
 ```
 

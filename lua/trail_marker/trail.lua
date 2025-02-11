@@ -8,41 +8,45 @@ function Trail.new(name)
   local self = setmetatable({}, Trail)
 
   self.name = name
-  self.markers = {}
   self.trail_pos = 0
+  self.marker_list = {}
+  self.marker_map = self:build_marker_map()
 
   -- virtual text
-  self.marker_lookup_table = self:build_marker_lookup_table()
   self.ns_id = vim.api.nvim_create_namespace("trail_marker_" .. name)
   self.is_virtual_text_on = true
 
-  -- add autocommand on buf open to add virtual text to newly opened buffers.
+  -- autocommand to add virtual text to newly opened buffers.
   vim.api.nvim_create_augroup('trail_marker', { clear = true })
   vim.api.nvim_create_autocmd('BufEnter', {
     group = 'trail_marker',
     callback = function()
       local bufnr = vim.api.nvim_get_current_buf()
 
-      if self.marker_lookup_table == nil then
-        self:build_marker_lookup_table()
+      if self.marker_map == nil then
+        self:build_marker_map()
       end
 
-      self:update_bufnr_virtual_text(bufnr)
+      self:virtual_text_update_bufnr(bufnr)
     end
   })
 
   return self
 end
 
-function Trail:build_marker_lookup_table()
+function Trail:build_marker_map()
   --[[
-  This function builds more convenient lookup table for markers that is keyed based on file path and row.
-  The original list of markers will still be used to preserve the order of markings. This table will make
-  it easier to remove markers and handle virtual text.
+  `Trail.marker_list` -> `Trail.marker_map` conversion.
 
-  Transform the `Trail.markers` table that looks like this (list of dictionaries):
+  This function builds more convenient lookup table for markers that is keyed based on file path and row.
+  The list of markers will still be used to preserve the order of markings.
+  This table will make it easier to remove markers and handle virtual text.
+
+  NOTE: it is important to call this function whenever the set of markers changes to keep the list and map in sync.
+
+  Transform the `Trail.marker_list` table that looks like this (list of dictionaries):
   ```lua
-  local markers = {
+  local marker_list = {
     {                          -- marker 1
       ["row"] = 5,
       ["col"] = 0,
@@ -66,9 +70,9 @@ function Trail:build_marker_lookup_table()
   }
   ```
 
-  into a table that looks like this (dictionary of dictionary of dictionaries):
+  into the `Trail.marker_map` table that looks like this (dictionaries all the way down):
   ```lua
-  local map = {
+  local marker_map = {
     ["file/path1"] = {                         -- file path
       [5] = {                                  -- row number
         ["markers"] = {1, 4},                  -- markers numbers on this row
@@ -86,38 +90,38 @@ function Trail:build_marker_lookup_table()
   }
   ```
   --]]
-  local marker_lookup_table = {}
+  local marker_map = {}
 
-  for idx, mark in ipairs(self.markers) do
-    -- first time seeing this path
-    if marker_lookup_table[mark.path] == nil then
-      marker_lookup_table[mark.path] = {}
+  for idx, mark in ipairs(self.marker_list) do
+    -- first time seeing this path.
+    if marker_map[mark.path] == nil then
+      marker_map[mark.path] = {}
     end
 
-    -- first time seeing this row
-    if marker_lookup_table[mark.path][mark.row] == nil then
-      marker_lookup_table[mark.path][mark.row] = { markers = {}, virtual_text = "" }
+    -- first time seeing this row.
+    if marker_map[mark.path][mark.row] == nil then
+      marker_map[mark.path][mark.row] = { markers = {}, virtual_text = "" }
     end
 
-    -- create an array of marker numbers first
-    table.insert(marker_lookup_table[mark.path][mark.row].markers, idx)
+    -- create an array of marker numbers first.
+    table.insert(marker_map[mark.path][mark.row].markers, idx)
   end
 
-  for buf_path, file_dict in pairs(marker_lookup_table) do
+  for buf_path, file_dict in pairs(marker_map) do
     for row, row_dict in pairs(file_dict) do
-      -- flatten the marker number array into a string
-      row_dict.virtual_text = self.name .. " " .. table.concat(marker_lookup_table[buf_path][row].markers, ",")
+      -- flatten the marker number array into a virtual text string.
+      row_dict.virtual_text = self.name .. " " .. table.concat(marker_map[buf_path][row].markers, ",")
     end
   end
 
-  self.marker_lookup_table = marker_lookup_table
+  self.marker_map = marker_map
 end
 
 function Trail:get_markers_at_location()
   local row, _, path = marker.get_location();
 
-  if self.marker_lookup_table[path] ~= nil and self.marker_lookup_table[path][row] ~= nil then
-    return self.marker_lookup_table[path][row].markers
+  if self.marker_map[path] ~= nil and self.marker_map[path][row] ~= nil then  -- Is there a better way to avoid nil?
+    return self.marker_map[path][row].markers
   end
 end
 
@@ -125,27 +129,42 @@ function Trail:place_marker()
   self.trail_pos = self.trail_pos + 1
   local b = marker.new()
 
-  table.insert(self.markers, self.trail_pos, b)
+  table.insert(self.marker_list, self.trail_pos, b)
 
-  self:build_marker_lookup_table()
-  self:update_all_virtual_text()
+  self:build_marker_map()
+  self:virtual_text_update_all_bufs()
 end
 
 function Trail:remove_marker(pos)
-  table.remove(self.markers, pos)
-  self:build_marker_lookup_table()
-  self:update_all_virtual_text()
+  table.remove(self.marker_list, pos)
 
-  self.trail_pos = self.trail_pos - 1
+  self:build_marker_map()
+  self:virtual_text_update_all_bufs()
+
+  -- Trail position should be moved one closer to the beginning of the trail when:
+  --    - the current marker is being removed.
+  --    - or if the marker being removed is between the beginning of the trail and the current position.
+  if pos <= self.trail_pos then
+    self.trail_pos = self.trail_pos - 1
+  end
+
+  -- Make sure we didn't fall off the trail.
   if self.trail_pos < 1 and self.trail ~= nil and #self.trail > 0 then
     self.trail_pos = 1
   end
 end
 
+function Trail:remove_marker_at_location()
+  local markers = self:get_markers_at_location()
+  if markers ~= nil then
+    self:remove_marker(markers[1])  -- TODO: prompt for user selection when more than one marker on line
+  end
+end
+
 function Trail:goto_marker(pos)
-  if 0 < pos and pos <= #self.markers then
+  if 0 < pos and pos <= #self.marker_list then
     self.trail_pos = pos
-    self.markers[self.trail_pos]:goto()
+    self.marker_list[self.trail_pos]:goto()
   end
 end
 
@@ -166,33 +185,32 @@ function Trail:trail_head()
 end
 
 function Trail:trail_end()
-  self:goto_marker(#self.markers)
+  self:goto_marker(#self.marker_list)
 end
 
 function Trail:clear_trail()
-  self.markers = {}
+  self.marker_list = {}
   self.trail_pos = 0
 
-  self:build_marker_lookup_table()
-  self:update_all_virtual_text()
+  self:build_marker_map()
+  self:virtual_text_update_all_bufs()
 end
 
 function Trail:trail_map()
-  print(vim.inspect(self.markers))
+  print(vim.inspect(self.marker_list))
 end
 
 -- Virtual Text
-function Trail:update_bufnr_virtual_text(bufnr)
-  -- Update the virtual text for a specific buffer WITHOUT rebuilding the vtext map.
-  -- Useful for running in autocommands like BufEnter where the map has not changed.
+function Trail:virtual_text_update_bufnr(bufnr)
+  -- Update the virtual text for a specific buffer.
   if self.is_virtual_text_on then
     vim.api.nvim_buf_clear_namespace(bufnr, self.ns_id, 0, -1)
 
     local buffer_path = vim.api.nvim_buf_get_name(bufnr)
-    local buf_map = self.marker_lookup_table[buffer_path]
+    local buf_map = self.marker_map[buffer_path]
 
     if buf_map then
-      for row, dict in pairs(self.marker_lookup_table[buffer_path]) do
+      for row, dict in pairs(self.marker_map[buffer_path]) do
         vim.api.nvim_buf_set_extmark(
           bufnr,
           self.ns_id,
@@ -205,18 +223,18 @@ function Trail:update_bufnr_virtual_text(bufnr)
   end
 end
 
-function Trail:update_all_virtual_text()
+function Trail:virtual_text_update_all_bufs()
   -- Update virtual text for all buffers.
   local bufnrs = vim.api.nvim_list_bufs()
 
   for _, bufnr in ipairs(bufnrs) do
-    self:update_bufnr_virtual_text(bufnr)
+    self:virtual_text_update_bufnr(bufnr)
   end
 end
 
 function Trail:virtual_text_on()
   self.is_virtual_text_on = true
-  self:update_all_virtual_text()
+  self:virtual_text_update_all_bufs()
 end
 
 function Trail:virtual_text_off()
