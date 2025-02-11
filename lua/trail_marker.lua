@@ -1,11 +1,9 @@
 -- This is the api of the plugin.
 local trail = require("trail_marker.trail")
-local virtual_text = require("trail_marker.virtual_text")
 
 local M = {}
 
 M.trail = trail.new("trail")
-M.virtual_text = virtual_text.new(M.trail)
 
 M.trail_map = function()
   M.trail:trail_map()
@@ -13,7 +11,13 @@ end
 
 M.place_marker = function()
   M.trail:place_marker()
-  M.virtual_text:update_all()
+end
+
+M.remove_marker = function()
+  local markers = M.trail:get_markers_at_location()
+  if markers ~= nil then
+    M.trail:remove_marker(markers[1])  -- TODO: prompt for user selection when more than one marker on line
+  end
 end
 
 M.current_marker = function()
@@ -38,19 +42,18 @@ end
 
 M.clear_trail = function()
   M.trail:clear_trail()
-  M.virtual_text:update_all()
-end
-
-M.virtual_text_toggle = function()
-  M.virtual_text:toggle()
 end
 
 M.virtual_text_on = function()
-  M.virtual_text:on()
+  M.trail:virtual_text_on()
 end
 
 M.virtual_text_off = function()
-  M.virtual_text:off()
+  M.trail:virtual_text_off()
+end
+
+M.virtual_text_toggle = function()
+  M.trail:virtual_text_toggle()
 end
 
 return M
