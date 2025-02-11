@@ -5,6 +5,17 @@ local M = {}
 
 M.trail = trail.new("trail")
 
+local serde = require("trail_marker.serde")
+local file, _ = io.open(M.trail:get_save_file_path(), "r")
+
+if file then
+  local content = file:read("*a")
+  file:close()
+
+  local deserialized_trail = serde.deserialize(content)
+  M.trail = trail.from_table(deserialized_trail)
+end
+
 M.trail_map = function()
   M.trail:trail_map()
 end
@@ -51,6 +62,10 @@ end
 
 M.virtual_text_toggle = function()
   M.trail:virtual_text_toggle()
+end
+
+M.save_trail = function()
+  M.trail:save_trail()
 end
 
 return M

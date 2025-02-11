@@ -10,6 +10,16 @@ function Marker.new()
   return self
 end
 
+function Marker.from_table(t)
+  local self = setmetatable({}, Marker)
+
+  self.row = t.row
+  self.col = t.col
+  self.path = t.path
+
+  return self
+end
+
 function Marker:goto()
   -- open the file
   vim.cmd('edit ' .. self.path)

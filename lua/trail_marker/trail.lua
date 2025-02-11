@@ -34,6 +34,28 @@ function Trail.new(name)
   return self
 end
 
+function Trail.from_table(t)
+  local self = Trail.new("from_table")
+
+  self.name = t.name
+  self.trail_pos = t.trail_pos
+  self.ns_id = t.ns_id
+  self.is_virtual_text_on = t.is_virtual_text_on
+
+  -- The marker_list and map need to be recreated since markers are objects.
+  -- Assigning the table representation to the object will not work.
+  local marker_list = {}
+
+  for _, marker_dict in ipairs(t.marker_list) do
+    table.insert(marker_list, marker.from_table(marker_dict))
+  end
+
+  self.marker_list = marker_list
+  self.marker_map = self:build_marker_map()
+
+  return self
+end
+
 function Trail:build_marker_map()
   --[[
   `Trail.marker_list` -> `Trail.marker_map` conversion.
@@ -136,6 +158,7 @@ function Trail:place_marker()
 
   self:build_marker_map()
   self:virtual_text_update_all_bufs()
+  self:save_trail()
 end
 
 function Trail:remove_marker(pos)
@@ -155,6 +178,8 @@ function Trail:remove_marker(pos)
   if self.trail_pos < 1 and self.trail ~= nil and #self.trail > 0 then
     self.trail_pos = 1
   end
+
+  self:save_trail()
 end
 
 function Trail:remove_marker_at_location()
@@ -191,6 +216,8 @@ function Trail:goto_marker(pos)
     self.trail_pos = pos
     self.marker_list[self.trail_pos]:goto()
   end
+
+  self:save_trail()
 end
 
 function Trail:current_marker()
@@ -199,18 +226,22 @@ end
 
 function Trail:next_marker()
   self:goto_marker(self.trail_pos + 1)
+  self:save_trail()
 end
 
 function Trail:prev_marker()
   self:goto_marker(self.trail_pos - 1)
+  self:save_trail()
 end
 
 function Trail:trail_head()
   self:goto_marker(1)
+  self:save_trail()
 end
 
 function Trail:trail_end()
   self:goto_marker(#self.marker_list)
+  self:save_trail()
 end
 
 function Trail:clear_trail()
@@ -219,6 +250,7 @@ function Trail:clear_trail()
 
   self:build_marker_map()
   self:virtual_text_update_all_bufs()
+  self:save_trail()
 end
 
 function Trail:trail_map()
@@ -226,6 +258,8 @@ function Trail:trail_map()
 end
 
 -- Virtual Text
+--
+-- Provide indicators of where trail markers are as virtual text.
 function Trail:virtual_text_update_bufnr(bufnr)
   -- Update the virtual text for a specific buffer.
   if self.is_virtual_text_on then
@@ -277,6 +311,47 @@ function Trail:virtual_text_toggle()
   else
     self:virtual_text_on()
   end
+end
+
+-- Serialize/Deserialize
+--
+-- To keep things simple a project will be determined by the the current working directory.
+-- This means if your cwd is `~/project1` you will not see any of the trails associated with `~/project2`.
+-- Note: This may change in the future to be aware of git repos.
+--
+-- The absolute path of each project will be hashed to produce a unique project directory name.
+-- Inside each project directory will be a set of files for each trail.
+--
+-- ~/.local/share/nvim/trail_marker/trails/
+--                                      -> 1234abcd/
+--                                               -> trail1
+--                                               -> trail2
+--                                               -> trail3
+--                                      -> 5678efgh/
+--                                               -> debug
+--                                               -> ticket123
+--
+-- Each trail file will be the `Trail.marker_list` table serialized.
+-- ```
+-- {
+--   { row = 1, col = 1, path = "/Users/whoami/project/file1.lua" },
+--   { row = 14, col = 12, path = "/Users/whoami/project/file1.lua" },
+--   { row = 2, col = 34, path = "/Users/whoami/project/file2.lua" }
+-- }
+-- ```
+local serde = require("trail_marker.serde")
+
+function Trail:get_save_file_path()
+  return string.format(
+    "%s/trails/%s/%s",
+    serde.data_dir_path,
+    serde.get_hash(vim.fn.getcwd()),
+    self.name
+  )
+end
+
+function Trail:save_trail()
+  serde.write_to_file(serde.serialize(self), self:get_save_file_path())
 end
 
 return Trail
