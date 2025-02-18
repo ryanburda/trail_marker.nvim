@@ -10,12 +10,39 @@ function Trail.new(name)
   self.name = name
   self.trail_pos = 0
   self.marker_list = {}
-  self.marker_map = self:build_marker_map()
+  self:build_marker_map()
 
   -- virtual text
-  self.ns_id = vim.api.nvim_create_namespace("trail_marker_" .. name)
+  self.ns_id = vim.api.nvim_create_namespace("trail_marker")
   self.is_virtual_text_on = true
+  self:setup_autocmds()
+  self:virtual_text_update_all_bufs()
 
+  return self
+end
+
+function Trail.from_table(t)
+  local self = Trail.new(t.name)
+
+  self.trail_pos = t.trail_pos
+  self.is_virtual_text_on = t.is_virtual_text_on
+
+  -- The marker_list and map need to be recreated since markers are objects.
+  -- Assigning the table representation to the object will not work.
+  local marker_list = {}
+
+  for _, marker_dict in ipairs(t.marker_list) do
+    table.insert(marker_list, marker.from_table(marker_dict))
+  end
+
+  self.marker_list = marker_list
+  self:build_marker_map()
+  self:virtual_text_update_all_bufs()
+
+  return self
+end
+
+function Trail:setup_autocmds()
   -- autocommand to add virtual text to newly opened buffers.
   vim.api.nvim_create_augroup('trail_marker', { clear = true })
   vim.api.nvim_create_autocmd('BufEnter', {
@@ -30,30 +57,6 @@ function Trail.new(name)
       self:virtual_text_update_bufnr(bufnr)
     end
   })
-
-  return self
-end
-
-function Trail.from_table(t)
-  local self = Trail.new("from_table")
-
-  self.name = t.name
-  self.trail_pos = t.trail_pos
-  self.ns_id = t.ns_id
-  self.is_virtual_text_on = t.is_virtual_text_on
-
-  -- The marker_list and map need to be recreated since markers are objects.
-  -- Assigning the table representation to the object will not work.
-  local marker_list = {}
-
-  for _, marker_dict in ipairs(t.marker_list) do
-    table.insert(marker_list, marker.from_table(marker_dict))
-  end
-
-  self.marker_list = marker_list
-  self.marker_map = self:build_marker_map()
-
-  return self
 end
 
 function Trail:build_marker_map()
@@ -331,21 +334,38 @@ end
 --                                               -> debug
 --                                               -> ticket123
 --
--- Each trail file will be the `Trail.marker_list` table serialized.
+-- Each trail file will contain the entire trail serialized.
 -- ```
 -- {
---   { row = 1, col = 1, path = "/Users/whoami/project/file1.lua" },
---   { row = 14, col = 12, path = "/Users/whoami/project/file1.lua" },
---   { row = 2, col = 34, path = "/Users/whoami/project/file2.lua" }
+--   ["is_virtual_text_on"] = true,
+--   ["marker_list"] = {
+--     [1] = {
+--       ["row"] = 334,
+--       ["col"] = 3,
+--       ["path"] = "path/to/file",
+--     },
+--   },
+--   ["trail_pos"] = 1,
+--   ["name"] = "trail",
+--   ["ns_id"] = 25,
+--   ["marker_map"] = {
+--     ["path/to/file"] = {
+--       [334] = {
+--         ["markers"] = {
+--           [1] = 1,
+--         },
+--         ["virtual_text"] = "trail 1",
+--       },
+--     },
+--   },
 -- }
 -- ```
 local serde = require("trail_marker.serde")
 
 function Trail:get_save_file_path()
   return string.format(
-    "%s/trails/%s/%s",
-    serde.data_dir_path,
-    serde.get_hash(vim.fn.getcwd()),
+    "%s/%s",
+    serde.get_current_project_dir(),
     self.name
   )
 end

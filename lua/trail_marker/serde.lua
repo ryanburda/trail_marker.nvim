@@ -2,6 +2,7 @@
 local M = {}
 
 M.data_dir_path = vim.fn.stdpath("data") .. "/trail_marker"
+M.trail_dir_path = M.data_dir_path .. "/trails"
 
 M.get_hash = function(str)
   -- useful for hashing directory paths.
@@ -10,6 +11,10 @@ end
 
 M.get_dir_name = function(filePath)
   return filePath:match("(.*/)")
+end
+
+M.get_current_project_dir = function()
+  return string.format("%s/%s", M.trail_dir_path, M.get_hash(vim.fn.getcwd()))
 end
 
 M.create_dir = function(dir_path)
