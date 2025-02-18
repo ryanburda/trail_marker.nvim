@@ -15,8 +15,22 @@ function Trail.new(name)
   -- virtual text
   self.ns_id = vim.api.nvim_create_namespace("trail_marker")
   self.is_virtual_text_on = true
-  self:setup_autocmds()
   self:virtual_text_update_all_bufs()
+
+  -- autocommand to add virtual text to newly opened buffers.
+  vim.api.nvim_create_augroup('trail_marker', { clear = true })
+  vim.api.nvim_create_autocmd('BufEnter', {
+    group = 'trail_marker',
+    callback = function()
+      local bufnr = vim.api.nvim_get_current_buf()
+
+      if self.marker_map == nil then
+        self:build_marker_map()
+      end
+
+      self:virtual_text_update_bufnr(bufnr)
+    end
+  })
 
   return self
 end
@@ -40,23 +54,6 @@ function Trail.from_table(t)
   self:virtual_text_update_all_bufs()
 
   return self
-end
-
-function Trail:setup_autocmds()
-  -- autocommand to add virtual text to newly opened buffers.
-  vim.api.nvim_create_augroup('trail_marker', { clear = true })
-  vim.api.nvim_create_autocmd('BufEnter', {
-    group = 'trail_marker',
-    callback = function()
-      local bufnr = vim.api.nvim_get_current_buf()
-
-      if self.marker_map == nil then
-        self:build_marker_map()
-      end
-
-      self:virtual_text_update_bufnr(bufnr)
-    end
-  })
 end
 
 function Trail:build_marker_map()
@@ -264,7 +261,6 @@ end
 --
 -- Provide indicators of where trail markers are as virtual text.
 function Trail:virtual_text_update_bufnr(bufnr)
-  -- Update the virtual text for a specific buffer.
   if self.is_virtual_text_on then
     vim.api.nvim_buf_clear_namespace(bufnr, self.ns_id, 0, -1)
 
@@ -286,7 +282,6 @@ function Trail:virtual_text_update_bufnr(bufnr)
 end
 
 function Trail:virtual_text_update_all_bufs()
-  -- Update virtual text for all buffers.
   local bufnrs = vim.api.nvim_list_bufs()
 
   for _, bufnr in ipairs(bufnrs) do

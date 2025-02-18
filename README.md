@@ -48,21 +48,28 @@ vim.keymap.set(
   'n',
   '<leader>tm',
   require("trail_marker").trail_map,
-  { desc = "Trail Markers: List markers on trail" }
+  { desc = "Trail Markers: List markers on current trail" }
 )
 
 vim.keymap.set(
   'n',
   '<leader>ta',
   require("trail_marker").place_marker,
-  { desc = "Trail Markers: Add marker to trail" }
+  { desc = "Trail Markers: Add marker to current trail" }
 )
 
 vim.keymap.set(
   'n',
   '<leader>td',
   require("trail_marker").remove_marker,
-  { desc = "Trail Markers: Remove marker in current cursor position from trail" }
+  { desc = "Trail Markers: Remove marker from current trail" }
+)
+
+vim.keymap.set(
+  'n',
+  '<leader>tt',
+  require("trail_marker").current_marker,
+  { desc = "Trail Markers: Go to current marker" }
 )
 
 vim.keymap.set(
@@ -107,29 +114,36 @@ vim.keymap.set(
   { desc = "Trail Markers: Toggle virtual text" }
 )
 
+-- User commands exist alongside their lua counterparts.
+-- These are particularly useful when additional arguments need to be specified.
+-- Trail name completion exists in the case of `change_trail` and `remove_trail`.
 vim.keymap.set(
   'n',
   '<leader>tn',
-  require("trail_marker").new_trail,
-  { desc = "Trail Markers: Start a new trail" }
+  ':TrailMarker new_trail',
+  { desc = "Trail Markers: New trail" }
 )
 
 vim.keymap.set(
   'n',
   '<leader>tc',
-  require("trail_marker").change_trail,
-  { desc = "Trail Markers: Change trails" }
+  ':TrailMarker change_trail',
+  { desc = "Trail Markers: Change trail" }
+)
+
+vim.keymap.set(
+  'n',
+  '<leader>tr',
+  ':TrailMarker remove_trail',
+  { desc = "Trail Markers: Remove trail" }
 )
 ```
 
 
 ## Roadmap
-- Visual indicators
-  - Trail markers in gutter
-  - Winbar support (show previous trail marker line)
-- Code preview window
 - Trail sharing
 - Export as Github links
+- Add notes to trail_markers
 
 
 ##
