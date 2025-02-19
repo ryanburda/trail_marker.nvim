@@ -175,6 +175,11 @@ M.get_current_position = function()
   end
 end
 
+M.leave_trail = function()
+  M.trail = nil
+  vim.api.nvim_exec_autocmds('User', { pattern = 'TrailMarkerEvent' })
+end
+
 -------------------
 -- User commands --
 -------------------
@@ -185,6 +190,7 @@ local function_map = {
   new_trail = M.new_trail,
   change_trail = M.change_trail,
   remove_trail = M.remove_trail,
+  leave_trail = M.leave_trail,
   place_marker = M.place_marker,
   remove_marker = M.remove_marker,
   current_marker = M.current_marker,
@@ -253,7 +259,11 @@ vim.api.nvim_create_autocmd('User', {
   pattern = 'TrailMarkerEvent',
   callback = function(_)
     -- Update the trail information whenever it changes.
-    vim.g.trail_marker_info = string.format("%s:%s", M.get_current_trail(), M.get_current_position())
+    if M.trail ~= nil then
+      vim.g.trail_marker_info = string.format("%s:%s", M.get_current_trail(), M.get_current_position())
+    else
+      vim.g.trail_marker_info = nil
+    end
   end
 })
 
