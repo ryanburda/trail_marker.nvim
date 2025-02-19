@@ -260,7 +260,19 @@ vim.api.nvim_create_autocmd('User', {
   callback = function(_)
     -- Update the trail information whenever it changes.
     if M.trail ~= nil then
-      vim.g.trail_marker_info = string.format("%s:%s", M.get_current_trail(), M.get_current_position())
+
+      local pos = M.get_current_position()
+      local pos_str = tostring(pos)
+
+      if pos == 0 then
+        pos_str = "*"
+      elseif pos == 1 then
+        pos_str = "HEAD"
+      elseif pos == #M.trail.marker_list and pos ~= 1 then
+        pos_str = "END"
+      end
+
+      vim.g.trail_marker_info = string.format("%s:%s", M.get_current_trail(), pos_str)
     else
       vim.g.trail_marker_info = nil
     end
