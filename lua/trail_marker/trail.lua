@@ -155,10 +155,11 @@ function Trail:place_marker()
   local b = marker.new()
 
   table.insert(self.marker_list, self.trail_pos, b)
-
   self:build_marker_map()
   self:virtual_text_update_all_bufs()
   self:save_trail()
+
+  vim.api.nvim_exec_autocmds('User', { pattern = 'TrailMarkerEvent' })
 end
 
 function Trail:remove_marker(pos)
@@ -180,6 +181,7 @@ function Trail:remove_marker(pos)
   end
 
   self:save_trail()
+  vim.api.nvim_exec_autocmds('User', { pattern = 'TrailMarkerEvent' })
 end
 
 function Trail:remove_marker_at_location()
@@ -215,6 +217,8 @@ function Trail:goto_marker(pos)
   if 0 < pos and pos <= #self.marker_list then
     self.trail_pos = pos
     self.marker_list[self.trail_pos]:goto()
+
+    vim.api.nvim_exec_autocmds('User', { pattern = 'TrailMarkerEvent' })
   end
 
   self:save_trail()

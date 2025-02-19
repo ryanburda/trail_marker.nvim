@@ -84,6 +84,7 @@ end
 M.clear_trail = function()
   if M.trail ~= nil then
     M.trail:clear_trail()
+    vim.api.nvim_exec_autocmds('User', { pattern = 'TrailMarkerEvent' })
   else
     no_current_trail_warning()
   end
@@ -121,6 +122,7 @@ M.new_trail = function(trail_name)
     print(string.format("TrailMarker: trail `%s` already exists. Use `:TrailMarker change_trail %s` to switch.", trail_name, trail_name))
   else
     M.trail = trail.new(trail_name)
+    vim.api.nvim_exec_autocmds('User', { pattern = 'TrailMarkerEvent' })
   end
 end
 
@@ -134,6 +136,7 @@ M.change_trail = function(trail_name)
 
     local deserialized_trail = serde.deserialize(content)
     M.trail = trail.from_table(deserialized_trail)
+    vim.api.nvim_exec_autocmds('User', { pattern = 'TrailMarkerEvent' })
   else
     print(string.format("TrailMarker: trail `%s` does not exist.", trail_name))
   end
@@ -150,6 +153,7 @@ M.remove_trail = function(trail_name)
       M.trail:clear_trail()
       -- Set the trail to nil so it can't be modified by other functions unintentionally.
       M.trail = nil
+      vim.api.nvim_exec_autocmds('User', { pattern = 'TrailMarkerEvent' })
     end
 
     -- Remove the trail file
@@ -159,11 +163,25 @@ M.remove_trail = function(trail_name)
   end
 end
 
+M.get_current_trail = function()
+  if M.trail ~= nil then
+    return M.trail.name
+  end
+end
+
+M.get_current_position = function()
+  if M.trail ~= nil then
+    return M.trail.trail_pos
+  end
+end
+
 -------------------
 -- User commands --
 -------------------
 local function_map = {
   trail_map = M.trail_map,
+  get_current_trail = function() print(M.get_current_trail()) end,
+  get_current_position = function() print(M.get_current_position()) end,
   new_trail = M.new_trail,
   change_trail = M.change_trail,
   remove_trail = M.remove_trail,
@@ -225,6 +243,17 @@ end, {
     end
 
     return {}
+  end
+})
+
+---------------------
+-- global variable --
+---------------------
+vim.api.nvim_create_autocmd('User', {
+  pattern = 'TrailMarkerEvent',
+  callback = function(_)
+    -- Update the trail information whenever it changes.
+    vim.g.trail_marker_info = string.format("%s:%s", M.get_current_trail(), M.get_current_position())
   end
 })
 
