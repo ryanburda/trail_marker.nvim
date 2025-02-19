@@ -2,61 +2,124 @@
 local trail = require("trail_marker.trail")
 local serde = require("trail_marker.serde")
 
+local function no_current_trail_warning()
+  print("TrailMarker: No current trail. Use `:TrailMarker change_trail <trail_name>` or `:TrailMarker new_trail <trail_name>`")
+end
+
 local M = {}
 
 M.trail_map = function()
-  M.trail:trail_map()
+  -- TODO: fix
+  if M.trail ~= nil then
+    M.trail:trail_map()
+  else
+    no_current_trail_warning()
+  end
 end
 
 M.place_marker = function()
-  M.trail:place_marker()
+  if M.trail ~= nil then
+    M.trail:place_marker()
+  else
+    no_current_trail_warning()
+  end
 end
 
 M.remove_marker = function()
-  M.trail:remove_marker_at_location()
+  if M.trail ~= nil then
+    M.trail:remove_marker_at_location()
+  else
+    no_current_trail_warning()
+  end
 end
 
 M.current_marker = function()
-  M.trail:current_marker()
+  if M.trail ~= nil then
+    M.trail:current_marker()
+  else
+    no_current_trail_warning()
+  end
 end
 
 M.next_marker = function()
-  -- TODO: print warning if no next marker
-  M.trail:next_marker()
+  if M.trail ~= nil then
+    if M.trail.trail_pos == #M.trail.marker_list then
+      print("TrailMarker: no next marker")
+    else
+      M.trail:next_marker()
+    end
+  else
+    no_current_trail_warning()
+  end
 end
 
 M.prev_marker = function()
-  -- TODO: print warning if no previous marker
-  M.trail:prev_marker()
+  if M.trail ~= nil then
+    if M.trail.trail_pos == 1 then
+      print("TrailMarker: no previous marker")
+    else
+      M.trail:prev_marker()
+    end
+  else
+    no_current_trail_warning()
+  end
 end
 
 M.trail_head = function()
-  M.trail:trail_head()
+  if M.trail ~= nil then
+    M.trail:trail_head()
+  else
+    no_current_trail_warning()
+  end
 end
 
 M.trail_end = function()
-  M.trail:trail_end()
+  if M.trail ~= nil then
+    M.trail:trail_end()
+  else
+    no_current_trail_warning()
+  end
 end
 
 M.clear_trail = function()
-  M.trail:clear_trail()
+  if M.trail ~= nil then
+    M.trail:clear_trail()
+  else
+    no_current_trail_warning()
+  end
 end
 
 M.virtual_text_on = function()
-  M.trail:virtual_text_on()
+  if M.trail ~= nil then
+    M.trail:virtual_text_on()
+  else
+    no_current_trail_warning()
+  end
 end
 
 M.virtual_text_off = function()
-  M.trail:virtual_text_off()
+  if M.trail ~= nil then
+    M.trail:virtual_text_off()
+  else
+    no_current_trail_warning()
+  end
 end
 
 M.virtual_text_toggle = function()
-  M.trail:virtual_text_toggle()
+  if M.trail ~= nil then
+    M.trail:virtual_text_toggle()
+  else
+    no_current_trail_warning()
+  end
 end
 
 M.new_trail = function(trail_name)
-  -- TODO: Check if trail name already exists.
-  if trail_name ~= nil then
+  local trail_file = string.format("%s/%s", serde.get_current_project_dir(), trail_name)
+  local file, _ = io.open(trail_file, "r")
+
+  if file then
+    print(string.format("TrailMarker: trail `%s` already exists. Use `:TrailMarker change_trail %s` to switch.", trail_name, trail_name))
+  else
     M.trail = trail.new(trail_name)
   end
 end
@@ -71,16 +134,28 @@ M.change_trail = function(trail_name)
 
     local deserialized_trail = serde.deserialize(content)
     M.trail = trail.from_table(deserialized_trail)
+  else
+    print(string.format("TrailMarker: trail `%s` does not exist.", trail_name))
   end
 end
 
 M.remove_trail = function(trail_name)
-  -- TODO: handle case where removing current trail. Virtual text stays up.
   local trail_file = string.format("%s/%s", serde.get_current_project_dir(), trail_name)
   local file, _ = io.open(trail_file, "r")
 
   if file then
+    -- If the trail being removed is the current trail.
+    if M.trail ~= nil and trail_name == M.trail.name then
+      -- Clear the trail first so the virtual text goes away.
+      M.trail:clear_trail()
+      -- Set the trail to nil so it can't be modified by other functions unintentionally.
+      M.trail = nil
+    end
+
+    -- Remove the trail file
     os.execute(string.format("rm %s", trail_file))
+  else
+    print(string.format("TrailMarker: trail `%s` does not exist.", trail_name))
   end
 end
 
@@ -152,18 +227,5 @@ end, {
     return {}
   end
 })
-
---------------------
--- Initialization --
---------------------
-local default_trail_name = 'trail'
-local default_trail_file = string.format("%s/%s", serde.get_current_project_dir(), default_trail_name)
-local file = io.open(default_trail_file, "r")
-
-if file then
-  M.change_trail(default_trail_name)
-else
-  M.new_trail(default_trail_name)
-end
 
 return M
