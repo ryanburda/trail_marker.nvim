@@ -2,8 +2,16 @@
 local trail = require("trail_marker.trail")
 local serde = require("trail_marker.serde")
 
+local function warning(msg)
+  vim.api.nvim_echo({ { msg, 'WarningMsg' } }, false, {})
+end
+
 local function no_current_trail_warning()
-  print("TrailMarker: No current trail. Use `:TrailMarker change_trail <trail_name>` or `:TrailMarker new_trail <trail_name>`")
+  warning("TrailMarker: No current trail. Use `:TrailMarker change_trail <trail_name>` or `:TrailMarker new_trail <trail_name>`")
+end
+
+local function no_markers_on_trail_warning()
+  warning("TrailMarker: No markers on trail.")
 end
 
 local M = {}
@@ -35,7 +43,11 @@ end
 
 M.current_marker = function()
   if M.trail ~= nil then
-    M.trail:current_marker()
+    if #M.trail.marker_list == 0 then
+      no_markers_on_trail_warning()
+    else
+      M.trail:current_marker()
+    end
   else
     no_current_trail_warning()
   end
@@ -43,8 +55,10 @@ end
 
 M.next_marker = function()
   if M.trail ~= nil then
-    if M.trail.trail_pos == #M.trail.marker_list then
-      print("TrailMarker: no next marker")
+    if #M.trail.marker_list == 0 then
+      no_markers_on_trail_warning()
+    elseif M.trail.trail_pos == #M.trail.marker_list then
+      warning("TrailMarker: no next marker")
     else
       M.trail:next_marker()
     end
@@ -55,8 +69,10 @@ end
 
 M.prev_marker = function()
   if M.trail ~= nil then
-    if M.trail.trail_pos == 1 then
-      print("TrailMarker: no previous marker")
+    if #M.trail.marker_list == 0 then
+      no_markers_on_trail_warning()
+    elseif M.trail.trail_pos == 1 then
+      warning("TrailMarker: no previous marker")
     else
       M.trail:prev_marker()
     end
@@ -67,7 +83,11 @@ end
 
 M.trail_head = function()
   if M.trail ~= nil then
-    M.trail:trail_head()
+    if #M.trail.marker_list == 0 then
+      no_markers_on_trail_warning()
+    else
+      M.trail:trail_head()
+    end
   else
     no_current_trail_warning()
   end
@@ -75,7 +95,11 @@ end
 
 M.trail_end = function()
   if M.trail ~= nil then
-    M.trail:trail_end()
+    if #M.trail.marker_list == 0 then
+      no_markers_on_trail_warning()
+    else
+      M.trail:trail_end()
+    end
   else
     no_current_trail_warning()
   end
@@ -119,7 +143,7 @@ M.new_trail = function(trail_name)
   local file, _ = io.open(trail_file, "r")
 
   if file then
-    print(string.format("TrailMarker: trail `%s` already exists. Use `:TrailMarker change_trail %s` to switch.", trail_name, trail_name))
+    warning(string.format("TrailMarker: trail `%s` already exists. Use `:TrailMarker change_trail %s` to switch.", trail_name, trail_name))
   else
     M.trail = trail.new(trail_name)
     vim.api.nvim_exec_autocmds('User', { pattern = 'TrailMarkerEvent' })
@@ -138,7 +162,7 @@ M.change_trail = function(trail_name)
     M.trail = trail.from_table(deserialized_trail)
     vim.api.nvim_exec_autocmds('User', { pattern = 'TrailMarkerEvent' })
   else
-    print(string.format("TrailMarker: trail `%s` does not exist.", trail_name))
+    warning(string.format("TrailMarker: trail `%s` does not exist.", trail_name))
   end
 end
 
@@ -159,7 +183,7 @@ M.remove_trail = function(trail_name)
     -- Remove the trail file
     os.execute(string.format("rm %s", trail_file))
   else
-    print(string.format("TrailMarker: trail `%s` does not exist.", trail_name))
+    warning(string.format("TrailMarker: trail `%s` does not exist.", trail_name))
   end
 end
 
@@ -232,7 +256,7 @@ vim.api.nvim_create_user_command('TrailMarker', function(opts)
       func(additional_arg)
     end
   else
-    print("Invalid function name: " .. function_name)
+    warning("Invalid function name: " .. function_name)
   end
 end, {
   nargs = '*',
