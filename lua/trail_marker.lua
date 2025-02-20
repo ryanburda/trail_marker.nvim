@@ -1,3 +1,3 @@
-dofile("trail_marker.api")
-dofile("trail_marker.globals")
-dofile("trail_marker.user_commands")
+require("trail_marker.api")
+require("trail_marker.globals")
+require("trail_marker.user_commands")
