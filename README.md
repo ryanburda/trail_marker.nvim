@@ -8,7 +8,8 @@
 ## Table of Contents
 * [What are Trail Markers](#what-are-trail-markers)
 * [Installation](#installation)
-* [Example Keymaps](#example-keymaps)
+* [Getting Started](#getting-started)
+* [Configuration](#configuration)
 * [Roadmap](#roadmap)
 
 
