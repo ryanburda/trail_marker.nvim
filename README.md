@@ -13,19 +13,19 @@
 
 
 ## What are Trail Markers
-Trail markers highlight specific points in your code. Multiple trail markers make a trail. Trail markers are meant
-to be traversed in order to guide you down a specific code path. Multiple trails can exist per project and trails are
-always persisted through restarts, allowing you to go on your favorite hikes again and again.
+Trail markers highlight specific points in your code. Multiple markers make a trail. Trail markers are meant
+to be traversed in order to guide you down a specific code path. Multiple trails can exist per project and
+trails are always persisted through restarts, allowing you to go on your favorite hikes again and again.
 
 Trail markers differ from [marks](https://neovim.io/doc/user/motion.html#mark-motions) in that you don't assign them
-a letter. An ordered relationship is fundamental to the way trail markers are designed to be used. These aren't marks,
-they're something slightly different.
+a letter. An ordered relationship is fundamental to the way trail markers are designed to be used. With trail
+markers you don't need to remember how you named your marks.
 
 The [jumplist](https://neovim.io/doc/user/motion.html#jump-motions) is the closest parallel to trail markers. Think of
 trail markers as a more intentional jumplist that only populates when you tell it. No more smashing `<C-o>` to get
 where you need to go.
 
-Trail markers function as a hybrid of marks and the jumplist.
+Trail markers are a hybrid of marks and the jumplist.
 
 ## Installation
 
@@ -159,6 +159,10 @@ These variables can be used in places like the status line or winbar.
 
 #### Example integration with lualine
 
+![lualine integration](./docs/assets/lualine_integraion.jpg)
+
+Add the following to your lualine setup to show trail information in your status line.
+
 ```lua
 local trail_marker_info = function()
   if vim.g.trail_marker_info then
@@ -179,7 +183,7 @@ require('lualine').setup {
 ## Roadmap
 - Trail sharing
 - Export as Github links
-- Add notes to trail_markers
+- Add notes to markers
 
 
 ##
