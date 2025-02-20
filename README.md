@@ -37,6 +37,43 @@ Install using [lazy.nvim](https://github.com/folke/lazy.nvim)
 }
 ```
 
+## Getting Started
+
+Trail Marker does not put you on a trail by default. Run the following to create a new trail:
+```
+:TrailMarker new_trail demo
+```
+
+Place a marker on the trail by running:
+```
+:TrailMarker place_marker
+```
+
+Remove a marker with:
+```
+:TrailMarker remove_marker
+```
+
+Navigate between markers using:
+```
+:TrailMarker prev_marker
+:TrailMarker next_marker
+```
+
+If multiple trails exist you can switch between them using:
+```
+:TrailMarker change_trail <trail_name>
+```
+
+Leave the current trail:
+```
+:TrailMarker leave_trail
+```
+
+## Configuration
+
+<details>
+<summary>Keymaps</summary>
 
 ## Example Keymaps
 
@@ -146,6 +183,11 @@ vim.keymap.set(
 )
 ```
 
+</details>
+
+<details>
+<summary>Integration with other plugins</summary>
+
 ## Global Variables
 Several global variables exist to show relevant TrailMarker information.
 
@@ -178,6 +220,8 @@ require('lualine').setup {
   },
 }
 ```
+
+</details>
 
 
 ## Roadmap
