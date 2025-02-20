@@ -181,7 +181,7 @@ function Trail:remove_marker(pos)
   end
 
   self:save_trail()
-  vim.api.nvim_exec_autocmds('User', { pattern = 'TrailMarkerEvent' })
+  vim.api.nvim_exec_autocmds('User', { pattern = 'TrailMarkerEventPositionUpdate' })
 end
 
 function Trail:remove_marker_at_location()
@@ -218,7 +218,7 @@ function Trail:goto_marker(pos)
     self.trail_pos = pos
     self.marker_list[self.trail_pos]:goto()
 
-    vim.api.nvim_exec_autocmds('User', { pattern = 'TrailMarkerEvent' })
+    vim.api.nvim_exec_autocmds('User', { pattern = 'TrailMarkerEventPositionUpdate' })
   end
 
   self:save_trail()
@@ -255,6 +255,7 @@ function Trail:clear_trail()
   self:build_marker_map()
   self:virtual_text_update_all_bufs()
   self:save_trail()
+  vim.api.nvim_exec_autocmds('User', { pattern = 'TrailMarkerEventPositionUpdate' })
 end
 
 function Trail:trail_map()

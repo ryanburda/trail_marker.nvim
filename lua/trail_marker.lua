@@ -108,7 +108,6 @@ end
 M.clear_trail = function()
   if M.trail ~= nil then
     M.trail:clear_trail()
-    vim.api.nvim_exec_autocmds('User', { pattern = 'TrailMarkerEvent' })
   else
     no_current_trail_warning()
   end
@@ -146,7 +145,7 @@ M.new_trail = function(trail_name)
     warning(string.format("TrailMarker: trail `%s` already exists. Use `:TrailMarker change_trail %s` to switch.", trail_name, trail_name))
   else
     M.trail = trail.new(trail_name)
-    vim.api.nvim_exec_autocmds('User', { pattern = 'TrailMarkerEvent' })
+    vim.api.nvim_exec_autocmds('User', { pattern = 'TrailMarkerEventTrailChanged' })
   end
 end
 
@@ -160,7 +159,7 @@ M.change_trail = function(trail_name)
 
     local deserialized_trail = serde.deserialize(content)
     M.trail = trail.from_table(deserialized_trail)
-    vim.api.nvim_exec_autocmds('User', { pattern = 'TrailMarkerEvent' })
+    vim.api.nvim_exec_autocmds('User', { pattern = 'TrailMarkerEventTrailChanged' })
   else
     warning(string.format("TrailMarker: trail `%s` does not exist.", trail_name))
   end
@@ -177,7 +176,7 @@ M.remove_trail = function(trail_name)
       M.trail:clear_trail()
       -- Set the trail to nil so it can't be modified by other functions unintentionally.
       M.trail = nil
-      vim.api.nvim_exec_autocmds('User', { pattern = 'TrailMarkerEvent' })
+      vim.api.nvim_exec_autocmds('User', { pattern = 'TrailMarkerEventTrailChanged' })
     end
 
     -- Remove the trail file
@@ -201,12 +200,18 @@ end
 
 M.leave_trail = function()
   M.trail = nil
-  vim.api.nvim_exec_autocmds('User', { pattern = 'TrailMarkerEvent' })
+  vim.api.nvim_exec_autocmds('User', { pattern = 'TrailMarkerEventTrailChanged' })
 end
 
--------------------
--- User commands --
--------------------
+--[[
+User Commands
+
+Provide a convenient way to interface with TrailMarker using Ex commands.
+
+```
+:TrailMarker <command> <optional-args>
+```
+--]]
 local function_map = {
   trail_map = M.trail_map,
   get_current_trail = function() print(M.get_current_trail()) end,
@@ -276,15 +281,41 @@ end, {
   end
 })
 
----------------------
--- global variable --
----------------------
-vim.api.nvim_create_autocmd('User', {
-  pattern = 'TrailMarkerEvent',
-  callback = function(_)
-    -- Update the trail information whenever it changes.
-    if M.trail ~= nil then
+--[[
+Global Variables
 
+Update TrailMarker global variables when certain events fire.
+These variables can be used to show TrailMarker information
+in various locations like the status line or winbar.
+--]]
+vim.api.nvim_create_autocmd('User', {
+  pattern = { 'TrailMarkerEventPositionUpdate', 'TrailMarkerEventTrailChanged' },
+  callback = function(_)
+    if M.trail ~= nil then
+      vim.g.trail_marker_position = M.get_current_position()
+    else
+      vim.g.trail_marker_position = nil
+    end
+  end
+})
+
+vim.api.nvim_create_autocmd('User', {
+  pattern = { 'TrailMarkerEventTrailChanged', },
+  callback = function(_)
+    if M.trail ~= nil then
+      vim.g.trail_marker_name = M.get_current_trail()
+    else
+      vim.g.trail_marker_name = nil
+    end
+  end
+})
+
+vim.api.nvim_create_autocmd('User', {
+  pattern = { 'TrailMarkerEvent*', },
+  callback = function(_)
+    -- Create a TrailMarker info string.
+    if M.trail ~= nil then
+      local name = M.get_current_trail()
       local pos = M.get_current_position()
       local pos_str = tostring(pos)
 
@@ -296,7 +327,7 @@ vim.api.nvim_create_autocmd('User', {
         pos_str = "END"
       end
 
-      vim.g.trail_marker_info = string.format("%s:%s", M.get_current_trail(), pos_str)
+      vim.g.trail_marker_info = string.format("%s:%s", name, pos_str)
     else
       vim.g.trail_marker_info = nil
     end

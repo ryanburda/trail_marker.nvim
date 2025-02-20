@@ -146,6 +146,35 @@ vim.keymap.set(
 )
 ```
 
+## Global Variables
+Several global variables exist to show relevant TrailMarker information.
+
+```lua
+vim.g.trail_marker_name
+vim.g.trail_marker_position
+vim.g.trail_marker_info
+```
+
+These variables can be used in places like the status line or winbar.
+
+#### Example integration with lualine
+
+```lua
+local trail_marker_info = function()
+  if vim.g.trail_marker_info then
+    return vim.g.trail_marker_info
+  else
+    return ""
+  end
+end
+
+require('lualine').setup {
+  sections = {
+    lualine_z = { trail_marker_info, 'location', 'progress', },
+  },
+}
+```
+
 
 ## Roadmap
 - Trail sharing
