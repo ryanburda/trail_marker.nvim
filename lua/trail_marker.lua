@@ -336,15 +336,40 @@ local finders = require("telescope.finders")
 local sorters = require("telescope.sorters")
 local previewers = require("telescope.previewers")
 local action_state = require("telescope.actions.state")
+local devicons = require("nvim-web-devicons")
+
+local get_line_contents = function(path, row)
+  -- TODO: See if there is a better way to do this.
+  -- Read the contents of the specific line from the file
+  local line_content = ""
+  if path and row then
+    local file = io.open(path, "r")
+    if file then
+      for _ = 1, row do
+        line_content = file:read("*l")
+        if not line_content then break end
+      end
+      file:close()
+    end
+  end
+
+  return line_content
+end
 
 local generate_new_finder = function()
   return finders.new_table {
     results = M.trail.marker_list,
     entry_maker = function(marker)
+      local line_content = get_line_contents(marker.path, marker.row)
+      local relative_path = vim.fn.fnamemodify(marker.path, ':.')
+      local icon = devicons.get_icon(relative_path, nil, {default = true})
+
+      local str = string.format("%s %s:%s:%s:%s", icon, relative_path, marker.row, marker.col, line_content)
+
       return {
         value = marker,
-        display = string.format("%s:%s:%s", vim.fn.fnamemodify(marker.path, ':.'), marker.row, marker.col),
-        ordinal = string.format("%s:%s:%s", marker.path, marker.row, marker.col),
+        display = str,
+        ordinal = str,
         path = marker.path,
         lnum = marker.row,
         col = marker.col,
@@ -373,7 +398,7 @@ M.trail_map = function()
   pickers.new({}, {
     prompt_title = string.format("Trail Markers - %s", M.trail.name),
     finder = generate_new_finder(),
-    sorter = sorters.get_generic_fuzzy_sorter(),
+    sorter = sorters.get_fzy_sorter(),
     previewer = previewers.vim_buffer_vimgrep.new({}),
     attach_mappings = function(_, map)
       map("i", "<c-d>", telescope_delete_mark)

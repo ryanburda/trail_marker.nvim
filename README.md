@@ -34,7 +34,8 @@ Install using [lazy.nvim](https://github.com/folke/lazy.nvim)
 
 ```lua
 {
-  "ryanburda/trail_marker.nvim"
+  "ryanburda/trail_marker.nvim",
+  dependencies = { 'kyazdani42/nvim-web-devicons', },  -- OPTIONAL
 }
 ```
 
@@ -154,7 +155,7 @@ vim.keymap.set(
 
 vim.keymap.set(
   'n',
-  '<leader>tl',
+  '<leader>tq',
   require("trail_marker").leave_trail,
   { desc = "Trail Marker: Leave trail" }
 )
