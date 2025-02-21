@@ -16,15 +16,6 @@ end
 
 local M = {}
 
-M.trail_map = function()
-  -- TODO: fix
-  if M.trail ~= nil then
-    M.trail:trail_map()
-  else
-    no_current_trail_warning()
-  end
-end
-
 M.place_marker = function()
   if M.trail ~= nil then
     M.trail:place_marker()
@@ -333,5 +324,69 @@ vim.api.nvim_create_autocmd('User', {
     end
   end
 })
+
+--[[
+
+Telescope integration
+
+--]]
+local telescope = require("telescope")
+local pickers = require("telescope.pickers")
+local finders = require("telescope.finders")
+local sorters = require("telescope.sorters")
+local previewers = require("telescope.previewers")
+local action_state = require("telescope.actions.state")
+
+local generate_new_finder = function()
+  return finders.new_table {
+    results = M.trail.marker_list,
+    entry_maker = function(marker)
+      return {
+        value = marker,
+        display = string.format("%s:%s:%s", vim.fn.fnamemodify(marker.path, ':.'), marker.row, marker.col),
+        ordinal = string.format("%s:%s:%s", marker.path, marker.row, marker.col),
+        path = marker.path,
+        lnum = marker.row,
+        col = marker.col,
+      }
+    end
+  }
+end
+
+local telescope_delete_mark = function(prompt_bufnr)
+  local selection = action_state.get_selected_entry()
+  M.trail:remove_marker(selection.index)
+
+  local current_picker = action_state.get_current_picker(prompt_bufnr)
+  current_picker:refresh(generate_new_finder(), { reset_prompt = true })
+end
+
+M.trail_map = function()
+  if M.trail == nil then
+    no_current_trail_warning()
+    return
+  elseif #M.trail.marker_list == 0 then
+    no_markers_on_trail_warning()
+    return
+  end
+
+  pickers.new({}, {
+    prompt_title = string.format("Trail Markers - %s", M.trail.name),
+    finder = generate_new_finder(),
+    sorter = sorters.get_generic_fuzzy_sorter(),
+    previewer = previewers.vim_buffer_vimgrep.new({}),
+    attach_mappings = function(_, map)
+      map("i", "<c-d>", telescope_delete_mark)
+      map("n", "<c-d>", telescope_delete_mark)
+      return true
+    end,
+  }):find()
+end
+
+telescope.register_extension {
+  exports = {
+    list_trail_markers = M.list_trail_markers
+  }
+}
 
 return M

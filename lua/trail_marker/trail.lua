@@ -31,6 +31,7 @@ function Trail.new(name)
       self:virtual_text_update_bufnr(bufnr)
     end
   })
+  self:save_trail()
 
   return self
 end
