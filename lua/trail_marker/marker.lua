@@ -1,4 +1,6 @@
 -- Mark specific locations in your code.
+local utils = require("trail_marker.utils")
+
 local Marker = {}
 Marker.__index = Marker
 
@@ -21,10 +23,18 @@ function Marker.from_table(t)
 end
 
 function Marker:goto()
+  -- TODO: fix case where buffer has not been written to.
+  --       likely don't want to use `edit` here.
   -- open the file
   vim.cmd('edit ' .. self.path)
+
+  -- Handles cases where the content of the line has changed.
+  -- Go to the end of the row if the column number exceeds the length of the row.
+  local line_length = utils.get_line_length(self.path, self.row)
+  local col = math.min(self.col, line_length)
+
   -- set the cursor to the specified line and column
-  vim.api.nvim_win_set_cursor(0, {self.row, self.col})
+  vim.api.nvim_win_set_cursor(0, {self.row, col})
 end
 
 Marker.get_location = function()
