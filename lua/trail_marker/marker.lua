@@ -23,12 +23,10 @@ function Marker.from_table(t)
 end
 
 function Marker:goto()
-  -- TODO: fix case where buffer has not been written to.
-  --       likely don't want to use `edit` here.
   -- open the file
-  vim.cmd('edit ' .. self.path)
+  utils.switch_or_open(self.path)
 
-  -- Handles cases where the content of the line has changed.
+  -- Handle the case where the content of the line has changed.
   -- Go to the end of the row if the column number exceeds the length of the row.
   local line_length = utils.get_line_length(self.path, self.row)
   local col = math.min(self.col, line_length)

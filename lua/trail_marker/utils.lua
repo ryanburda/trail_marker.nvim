@@ -34,4 +34,16 @@ M.get_line_length = function(path, row_number)
   end
 end
 
+M.switch_or_open = function(path)
+  local bufnr = M.get_bufnr_by_path(path)
+
+  if bufnr then
+    -- If the buffer exists, switch to it
+    vim.api.nvim_set_current_buf(bufnr)
+  else
+    -- Otherwise, open the file in a new buffer
+    vim.cmd('edit ' .. vim.fn.fnameescape(path))
+  end
+end
+
 return M
