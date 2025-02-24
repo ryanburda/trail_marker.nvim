@@ -1,24 +1,25 @@
 --[[
 
-fzf-lua integration
+fzf-lua integration - provide a fuzzy finding interface for Trail Marker commands.
 
 NOTES:
-  - This should only be used if you have fzf-lua installed.
+  - This should only be used if fzf-lua is installed.
   - This should only be used after Trail Marker has been set up.
 
+Example usage:
 ```lua
 vim.keymap.set(
   'n',
-  '<leader>tc',
-  require("trail_marker").fzf_lua_change_trail,
-  { desc = "TrailMarker: Change trails with fzf-lua" }
+  '<leader>tm',
+  require("trail_marker.extensions.fzf-lua").trail_map,
+  { desc = "Trail Marker: List markers on current trail with fzf-lua" }
 )
 
 vim.keymap.set(
   'n',
-  '<leader>tm',
-  require("trail_marker").fzf_lua_trail_map,
-  { desc = "Trail Marker: List markers on current trail with fzf-lua" }
+  '<leader>tc',
+  require("trail_marker.extensions.fzf-lua").change_trail,
+  { desc = "TrailMarker: Change trails with fzf-lua" }
 )
 ```
 
@@ -63,7 +64,7 @@ end
 M.change_trail = function()
   require("fzf-lua").files({
     cwd=require("trail_marker.serde").get_current_project_dir(),
-    prompt="Trails",
+    prompt = "Change Trail> ",
     previewer = false,
     actions = {
       ["default"] = function(selected)
