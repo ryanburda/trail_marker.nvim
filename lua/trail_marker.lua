@@ -366,17 +366,15 @@ M.fzf_lua_trail_map = function()
       previewer = "builtin",
       actions = {
         ["default"] = function(selected)
-          -- You can define what happens on default action
+          -- TODO: update trail position on selection.
+          --       might need to add position numbers to the picker.
           local marker_info = selected[1]
           local path, row, col = marker_info:match("([^:]+):([^:]+):([^:]+)")
           utils.switch_or_open(path, tonumber(row), tonumber(col))
         end,
         ["ctrl-d"] = function(selected)
-          -- TODO: fix deleting marker from fzf-lua
-          -- Action for deleting the marker will be defined here
-          -- For example: remove the selected marker from the list
+          -- TODO: implement logic to remove the marker
           print("Delete marker:", selected[1])
-          -- implement your logic to remove the marker
         end,
       },
     })
@@ -400,15 +398,17 @@ M.fzf_lua_change_trail = function()
             vim.notify("No trail selected!", vim.log.levels.WARN)
           end
         end,
-        ["ctrl-d"] = function(selected)
-          -- TODO: don't quit after deleting trail.
-          local trail_name = selected[1]:match("%w+")
-          if trail_name then
-            M.remove_trail(trail_name)
-          else
-            vim.notify("No trail selected!", vim.log.levels.WARN)
-          end
-        end,
+        ["ctrl-d"] = {
+          fn = function(selected)
+            local trail_name = selected[1]:match("%w+")
+            if trail_name then
+              M.remove_trail(trail_name)
+            else
+              vim.notify("No trail selected!", vim.log.levels.WARN)
+            end
+          end,
+          reload = true,
+        },
       },
     })
   end
