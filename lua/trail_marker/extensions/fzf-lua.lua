@@ -38,7 +38,9 @@ M.trail_map = function()
 
   local entries = {}
   for idx, marker in ipairs(trail_marker.trail.marker_list) do
+    -- TODO: show relative path in picker
     --local path = vim.fn.fnamemodify(marker.path, ':.')
+    -- TODO: fix preview now that index is the first part of the string.
     table.insert(entries, string.format("%s:%s:%s:%s", idx, marker.path, marker.row, marker.col))
   end
 
