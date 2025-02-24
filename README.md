@@ -9,8 +9,6 @@
 * [What are Trail Markers](#what-are-trail-markers)
 * [Installation](#installation)
 * [Getting Started](#getting-started)
-* [Configuration](#configuration)
-* [Roadmap](#roadmap)
 
 
 ## What are Trail Markers
@@ -28,6 +26,8 @@ where you need to go.
 
 Trail markers are a hybrid of marks and the jumplist.
 
+TODO: include video
+
 ## Installation
 
 Install using [lazy.nvim](https://github.com/folke/lazy.nvim)
@@ -35,195 +35,14 @@ Install using [lazy.nvim](https://github.com/folke/lazy.nvim)
 ```lua
 {
   "ryanburda/trail_marker.nvim",
-  dependencies = { 'kyazdani42/nvim-web-devicons', },  -- OPTIONAL
 }
 ```
 
 ## Getting Started
-
-Trail Marker does not put you on a trail by default. Run the following to create a new trail:
+To learn more about Trail Marker, its commands, and how it can be configured visit the help file:
 ```
-:TrailMarker new_trail demo
+:help trail_marker.txt
 ```
-
-Place a marker on the trail by running:
-```
-:TrailMarker place_marker
-```
-
-Remove a marker with:
-```
-:TrailMarker remove_marker
-```
-
-Navigate between markers using:
-```
-:TrailMarker prev_marker
-:TrailMarker next_marker
-```
-
-If multiple trails exist you can switch between them using:
-```
-:TrailMarker change_trail <trail_name>
-```
-
-Leave the current trail:
-```
-:TrailMarker leave_trail
-```
-
-## Configuration
-
-<details>
-<summary>Keymaps</summary>
-
-## Example Keymaps
-
-Trail Marker doesn't assign any default keymaps. The following should be modified to your liking and added to
-your config.
-
-```lua
-vim.keymap.set(
-  'n',
-  '<leader>ta',
-  require("trail_marker").place_marker,
-  { desc = "Trail Marker: Add marker to current trail" }
-)
-
-vim.keymap.set(
-  'n',
-  '<leader>td',
-  require("trail_marker").remove_marker,
-  { desc = "Trail Marker: Remove marker from current trail" }
-)
-
-vim.keymap.set(
-  'n',
-  '<leader>tt',
-  require("trail_marker").current_marker,
-  { desc = "Trail Marker: Go to current marker" }
-)
-
-vim.keymap.set(
-  'n',
-  '<leader>tj',
-  require("trail_marker").next_marker,
-  { desc = "Trail Marker: Go to next marker" }
-)
-
-vim.keymap.set(
-  'n',
-  '<leader>tk',
-  require("trail_marker").prev_marker,
-  { desc = "Trail Marker: Go to previous marker" }
-)
-
-vim.keymap.set(
-  'n',
-  '<leader>tgg',
-  require("trail_marker").trail_head,
-  { desc = "Trail Marker: Go to start of trail" }
-)
-
-vim.keymap.set(
-  'n',
-  '<leader>tG',
-  require("trail_marker").trail_end,
-  { desc = "Trail Marker: Go to end of trail" }
-)
-
-vim.keymap.set(
-  'n',
-  '<leader>tx',
-  require("trail_marker").clear_trail,
-  { desc = "Trail Marker: Remove all markers from trail" }
-)
-
-vim.keymap.set(
-  'n',
-  '<leader>tv',
-  require("trail_marker").virtual_text_toggle,
-  { desc = "Trail Marker: Toggle virtual text" }
-)
-
-vim.keymap.set(
-  'n',
-  '<leader>tq',
-  require("trail_marker").leave_trail,
-  { desc = "Trail Marker: Leave trail" }
-)
-
--- User commands exist alongside their lua counterparts.
--- These are particularly useful when additional arguments need to be specified.
--- Trail name completion exists in the case of `change_trail` and `remove_trail`.
-vim.keymap.set(
-  'n',
-  '<leader>tn',
-  ':TrailMarker new_trail',
-  { desc = "Trail Marker: New trail" }
-)
-
-vim.keymap.set(
-  'n',
-  '<leader>tc',
-  ':TrailMarker change_trail',
-  { desc = "Trail Marker: Change trail" }
-)
-
-vim.keymap.set(
-  'n',
-  '<leader>tr',
-  ':TrailMarker remove_trail',
-  { desc = "Trail Marker: Remove trail" }
-)
-```
-
-</details>
-
-<details>
-<summary>Integration with other plugins</summary>
-
-## Global Variables
-Several global variables exist to show relevant TrailMarker information.
-
-```lua
-vim.g.trail_marker_name
-vim.g.trail_marker_position
-vim.g.trail_marker_info
-```
-
-These variables can be used in places like the status line or winbar.
-
-#### Example integration with lualine
-
-![lualine integration](./docs/assets/lualine_integraion.jpg)
-
-Add the following to your lualine setup to show trail information in your status line.
-
-```lua
-local trail_marker_info = function()
-  if vim.g.trail_marker_info then
-    return vim.g.trail_marker_info
-  else
-    return ""
-  end
-end
-
-require('lualine').setup {
-  sections = {
-    lualine_z = { trail_marker_info, 'location', 'progress', },
-  },
-}
-```
-
-</details>
-
-
-## Roadmap
-- Trail sharing
-- Export as Github links
-- Add notes to markers
-
 
 ##
 ~ Happy Hiking!
