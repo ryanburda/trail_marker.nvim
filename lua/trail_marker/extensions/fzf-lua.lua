@@ -37,9 +37,9 @@ M.trail_map = function()
   end
 
   local entries = {}
-  for _, marker in ipairs(trail_marker.trail.marker_list) do
+  for idx, marker in ipairs(trail_marker.trail.marker_list) do
     --local path = vim.fn.fnamemodify(marker.path, ':.')
-    table.insert(entries, string.format("%s:%s:%s", marker.path, marker.row, marker.col))
+    table.insert(entries, string.format("%s:%s:%s:%s", idx, marker.path, marker.row, marker.col))
   end
 
   require("fzf-lua").fzf_exec(entries, {
@@ -47,16 +47,19 @@ M.trail_map = function()
     previewer = "builtin",
     actions = {
       ["default"] = function(selected)
-        -- TODO: update trail position on selection.
-        --       might need to add position numbers to the picker.
         local marker_info = selected[1]
-        local path, row, col = marker_info:match("([^:]+):([^:]+):([^:]+)")
+        local idx, path, row, col = marker_info:match("([^:]+):([^:]+):([^:]+):([^:]+)")
         utils.switch_or_open(path, tonumber(row), tonumber(col))
+        require("trail_marker").trail:goto_marker(tonumber(idx))
       end,
-      ["ctrl-d"] = function(selected)
-        -- TODO: implement logic to remove the marker
-        print("Delete marker:", selected[1])
-      end,
+      ["ctrl-x"] = {
+        fn = function(selected)
+          local marker_info = selected[1]
+          local idx, _, _, _ = marker_info:match("([^:]+):([^:]+):([^:]+):([^:]+)")
+          require("trail_marker").trail:remove_marker(tonumber(idx))
+        end,
+        reload = true,
+      },
     },
   })
 end
@@ -75,7 +78,7 @@ M.change_trail = function()
           vim.notify("No trail selected!", vim.log.levels.WARN)
         end
       end,
-      ["ctrl-d"] = {
+      ["ctrl-x"] = {
         fn = function(selected)
           local trail_name = selected[1]:match("%w+")
           if trail_name then
