@@ -187,6 +187,22 @@ M.leave_trail = function()
   vim.api.nvim_exec_autocmds('User', { pattern = 'TrailMarkerEventTrailChanged' })
 end
 
+M.get_trail_list = function()
+  local trails = {}
+
+  -- Use `ls` command to list files in the directory
+  local p = io.popen('ls -p "' .. serde.get_current_project_dir() .. '"')  -- -p appends a / to directories
+  for file in p:lines() do
+    -- Check that the file does not end with `/` to exclude directories
+    if not file:match("/$") then
+      table.insert(trails, file)
+    end
+  end
+  p:close()
+
+  return trails
+end
+
 --[[
 Global Variables
 

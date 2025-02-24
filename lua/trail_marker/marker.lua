@@ -1,4 +1,8 @@
--- Mark specific locations in your code.
+--[[
+
+Mark specific locations in your code.
+
+--]]
 local utils = require("trail_marker.utils")
 
 local Marker = {}

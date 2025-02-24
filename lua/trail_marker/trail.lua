@@ -1,4 +1,8 @@
--- Multiple markers make a trail.
+--[[
+
+Multiple markers make a trail.
+
+--]]
 local marker = require("trail_marker.marker")
 
 local Trail = {}
