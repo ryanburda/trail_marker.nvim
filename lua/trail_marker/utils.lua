@@ -56,4 +56,16 @@ M.switch_or_open = function(path, row, col)
 
 end
 
+M.warning = function(msg)
+  vim.api.nvim_echo({ { msg, 'WarningMsg' } }, false, {})
+end
+
+M.no_current_trail_warning = function()
+  M.warning("TrailMarker: No current trail. Use `:TrailMarker change_trail <trail_name>` or `:TrailMarker new_trail <trail_name>`")
+end
+
+M.no_markers_on_trail_warning = function()
+  M.warning("TrailMarker: No markers on trail.")
+end
+
 return M
