@@ -34,7 +34,8 @@ M.get_line_length = function(path, row_number)
   end
 end
 
-M.switch_or_open = function(path)
+M.switch_or_open = function(path, row, col)
+  -- TODO: allow row and col to be nil to go to the top of the file.
   local bufnr = M.get_bufnr_by_path(path)
 
   if bufnr then
@@ -44,6 +45,15 @@ M.switch_or_open = function(path)
     -- Otherwise, open the file in a new buffer
     vim.cmd('edit ' .. vim.fn.fnameescape(path))
   end
+
+  -- Handle the case where the content of the line has changed.
+  -- Go to the end of the row if the column number exceeds the length of the row.
+  local line_length = M.get_line_length(path, row)
+  local col_adjusted = math.min(col, line_length)
+
+  -- set the cursor to the specified line and column
+  vim.api.nvim_win_set_cursor(0, {row, col_adjusted})
+
 end
 
 return M

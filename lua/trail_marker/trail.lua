@@ -16,7 +16,40 @@ function Trail.new(name)
   self.ns_id = vim.api.nvim_create_namespace("trail_marker")
   self.is_virtual_text_on = true
   self:virtual_text_update_all_bufs()
+  self:setup_autocmd()
 
+  self:save_trail()
+
+  return self
+end
+
+function Trail.from_table(t)
+  -- TODO: get rid of duplication with `Trail.new`.
+  local self = setmetatable({}, Trail)
+
+  self.name = t.name
+  self.trail_pos = t.trail_pos
+  self.is_virtual_text_on = t.is_virtual_text_on
+
+  -- The marker_list and map need to be recreated since markers are objects.
+  -- Assigning the table representation to the object will not work.
+  local marker_list = {}
+
+  for _, marker_dict in ipairs(t.marker_list) do
+    table.insert(marker_list, marker.from_table(marker_dict))
+  end
+
+  self.marker_list = marker_list
+  self:build_marker_map()
+
+  self.ns_id = vim.api.nvim_create_namespace("trail_marker")
+  self:setup_autocmd()
+  self:virtual_text_update_all_bufs()
+
+  return self
+end
+
+function Trail:setup_autocmd()
   -- autocommand to add virtual text to newly opened buffers.
   vim.api.nvim_create_augroup('trail_marker', { clear = true })
   vim.api.nvim_create_autocmd('BufEnter', {
@@ -31,30 +64,6 @@ function Trail.new(name)
       self:virtual_text_update_bufnr(bufnr)
     end
   })
-  self:save_trail()
-
-  return self
-end
-
-function Trail.from_table(t)
-  local self = Trail.new(t.name)
-
-  self.trail_pos = t.trail_pos
-  self.is_virtual_text_on = t.is_virtual_text_on
-
-  -- The marker_list and map need to be recreated since markers are objects.
-  -- Assigning the table representation to the object will not work.
-  local marker_list = {}
-
-  for _, marker_dict in ipairs(t.marker_list) do
-    table.insert(marker_list, marker.from_table(marker_dict))
-  end
-
-  self.marker_list = marker_list
-  self:build_marker_map()
-  self:virtual_text_update_all_bufs()
-
-  return self
 end
 
 function Trail:build_marker_map()

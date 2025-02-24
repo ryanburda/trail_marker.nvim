@@ -1,6 +1,7 @@
 -- This is the api of the plugin.
 local trail = require("trail_marker.trail")
 local serde = require("trail_marker.serde")
+local utils = require("trail_marker.utils")
 
 local function warning(msg)
   vim.api.nvim_echo({ { msg, 'WarningMsg' } }, false, {})
@@ -195,84 +196,6 @@ M.leave_trail = function()
 end
 
 --[[
-User Commands
-
-Provide a convenient way to interface with TrailMarker using Ex commands.
-
-```
-:TrailMarker <command> <optional-args>
-```
---]]
-local function_map = {
-  trail_map = M.trail_map,
-  get_current_trail = function() print(M.get_current_trail()) end,
-  get_current_position = function() print(M.get_current_position()) end,
-  new_trail = M.new_trail,
-  change_trail = M.change_trail,
-  remove_trail = M.remove_trail,
-  leave_trail = M.leave_trail,
-  place_marker = M.place_marker,
-  remove_marker = M.remove_marker,
-  current_marker = M.current_marker,
-  next_marker = M.next_marker,
-  prev_marker = M.prev_marker,
-  trail_head = M.trail_head,
-  trail_end = M.trail_end,
-  clear_trail = M.clear_trail,
-  virtual_text_toggle = M.virtual_text_toggle,
-}
-
-local function complete_trail_names()
-  local dir_path = serde.get_current_project_dir()
-  local trails = {}
-
-  if vim.fn.isdirectory(dir_path) == 1 then
-    local handle = io.popen('ls ' .. dir_path)
-    if handle then
-      for filename in handle:lines() do
-        table.insert(trails, filename)
-      end
-      handle:close()
-    end
-  end
-
-  return trails
-end
-
-vim.api.nvim_create_user_command('TrailMarker', function(opts)
-  local function_name = opts.fargs[1]
-  local additional_arg = opts.fargs[2]
-
-  local func = function_map[function_name]
-
-  if func then
-    if additional_arg == nil then
-      func()
-    else
-      func(additional_arg)
-    end
-  else
-    warning("Invalid function name: " .. function_name)
-  end
-end, {
-  nargs = '*',
-  complete = function(_, cmd_line, _)
-    local args = vim.split(cmd_line, '%s+')
-
-    if #args == 2 then
-      -- Second argument involves typing the function name
-      return vim.tbl_keys(function_map)
-
-    elseif #args == 3 and vim.tbl_contains({"change_trail", "remove_trail"}, args[2]) then
-      -- Third argument requires trail name completion
-      return complete_trail_names()
-    end
-
-    return {}
-  end
-})
-
---[[
 Global Variables
 
 Update TrailMarker global variables when certain events fire.
@@ -329,89 +252,246 @@ vim.api.nvim_create_autocmd('User', {
 
 Telescope integration
 
+TODO: clean this up so it is handled more like fzf-lua
+
 --]]
-local telescope = require("telescope")
-local pickers = require("telescope.pickers")
-local finders = require("telescope.finders")
-local sorters = require("telescope.sorters")
-local previewers = require("telescope.previewers")
-local action_state = require("telescope.actions.state")
-local devicons = require("nvim-web-devicons")
+local has_telescope, telescope = pcall(require, "telescope")
 
-local get_line_contents = function(path, row)
-  -- TODO: See if there is a better way to do this.
-  -- Read the contents of the specific line from the file
-  local line_content = ""
-  if path and row then
-    local file = io.open(path, "r")
-    if file then
-      for _ = 1, row do
-        line_content = file:read("*l")
-        if not line_content then break end
+if has_telescope then
+  local pickers = require("telescope.pickers")
+  local finders = require("telescope.finders")
+  local sorters = require("telescope.sorters")
+  local previewers = require("telescope.previewers")
+  local action_state = require("telescope.actions.state")
+
+  local get_line_contents = function(path, row)
+    -- TODO: See if there is a better way to do this.
+    -- Read the contents of the specific line from the file
+    local line_content = ""
+    if path and row then
+      local file = io.open(path, "r")
+      if file then
+        for _ = 1, row do
+          line_content = file:read("*l")
+          if not line_content then break end
+        end
+        file:close()
       end
-      file:close()
     end
+
+    return line_content
   end
 
-  return line_content
-end
+  local generate_new_finder = function()
+    return finders.new_table {
+      results = M.trail.marker_list,
+      entry_maker = function(marker)
+        local line_content = get_line_contents(marker.path, marker.row)
+        local relative_path = vim.fn.fnamemodify(marker.path, ':.')
 
-local generate_new_finder = function()
-  return finders.new_table {
-    results = M.trail.marker_list,
-    entry_maker = function(marker)
-      local line_content = get_line_contents(marker.path, marker.row)
-      local relative_path = vim.fn.fnamemodify(marker.path, ':.')
-      local icon = devicons.get_icon(relative_path, nil, {default = true})
+        local str = string.format("%s:%s:%s:%s", relative_path, marker.row, marker.col, line_content)
 
-      local str = string.format("%s %s:%s:%s:%s", icon, relative_path, marker.row, marker.col, line_content)
+        return {
+          value = marker,
+          display = str,
+          ordinal = str,
+          path = marker.path,
+          lnum = marker.row,
+          col = marker.col,
+        }
+      end
+    }
+  end
 
-      return {
-        value = marker,
-        display = str,
-        ordinal = str,
-        path = marker.path,
-        lnum = marker.row,
-        col = marker.col,
-      }
+  local telescope_delete_mark = function(prompt_bufnr)
+    local selection = action_state.get_selected_entry()
+    M.trail:remove_marker(selection.index)
+
+    local current_picker = action_state.get_current_picker(prompt_bufnr)
+    current_picker:refresh(generate_new_finder(), { reset_prompt = true })
+  end
+
+  M.telescope_trail_map = function()
+    if M.trail == nil then
+      no_current_trail_warning()
+      return
+    elseif #M.trail.marker_list == 0 then
+      no_markers_on_trail_warning()
+      return
     end
+
+    pickers.new({}, {
+      prompt_title = string.format("Trail Markers - %s", M.trail.name),
+      finder = generate_new_finder(),
+      sorter = sorters.get_fzy_sorter(),
+      previewer = previewers.vim_buffer_vimgrep.new({}),
+      attach_mappings = function(_, map)
+        map("i", "<c-d>", telescope_delete_mark)
+        map("n", "<c-d>", telescope_delete_mark)
+        return true
+      end,
+    }):find()
+  end
+
+  telescope.register_extension {
+    exports = {
+      list_trail_markers = M.list_trail_markers
+    }
   }
 end
 
-local telescope_delete_mark = function(prompt_bufnr)
-  local selection = action_state.get_selected_entry()
-  M.trail:remove_marker(selection.index)
+--[[
 
-  local current_picker = action_state.get_current_picker(prompt_bufnr)
-  current_picker:refresh(generate_new_finder(), { reset_prompt = true })
-end
+fzf-lua integration
 
-M.trail_map = function()
-  if M.trail == nil then
-    no_current_trail_warning()
-    return
-  elseif #M.trail.marker_list == 0 then
-    no_markers_on_trail_warning()
-    return
+--]]
+M.fzf_lua_trail_map = function()
+  -- TODO: add content of line so that it can be searched. (similar being done in telescope integration)
+  local has_fzf_lua, fzf_lua = pcall(require, "fzf-lua")
+
+  if has_fzf_lua then
+    if M.trail == nil or #M.trail.marker_list == 0 then
+      print("No trail markers available")
+      return
+    end
+
+    local entries = {}
+    for _, marker in ipairs(M.trail.marker_list) do
+      --local path = vim.fn.fnamemodify(marker.path, ':.')
+      table.insert(entries, string.format("%s:%s:%s", marker.path, marker.row, marker.col))
+    end
+
+    fzf_lua.fzf_exec(entries, {
+      prompt = "Trail Markers> ",
+      previewer = "builtin",
+      actions = {
+        ["default"] = function(selected)
+          -- You can define what happens on default action
+          local marker_info = selected[1]
+          local path, row, col = marker_info:match("([^:]+):([^:]+):([^:]+)")
+          utils.switch_or_open(path, tonumber(row), tonumber(col))
+        end,
+        ["ctrl-d"] = function(selected)
+          -- TODO: fix deleting marker from fzf-lua
+          -- Action for deleting the marker will be defined here
+          -- For example: remove the selected marker from the list
+          print("Delete marker:", selected[1])
+          -- implement your logic to remove the marker
+        end,
+      },
+    })
   end
-
-  pickers.new({}, {
-    prompt_title = string.format("Trail Markers - %s", M.trail.name),
-    finder = generate_new_finder(),
-    sorter = sorters.get_fzy_sorter(),
-    previewer = previewers.vim_buffer_vimgrep.new({}),
-    attach_mappings = function(_, map)
-      map("i", "<c-d>", telescope_delete_mark)
-      map("n", "<c-d>", telescope_delete_mark)
-      return true
-    end,
-  }):find()
 end
 
-telescope.register_extension {
-  exports = {
-    list_trail_markers = M.list_trail_markers
-  }
+M.fzf_lua_change_trail = function()
+  local has_fzf_lua, fzf_lua = pcall(require, "fzf-lua")
+
+  if has_fzf_lua then
+    fzf_lua.files({
+      cwd=require("trail_marker.serde").get_current_project_dir(),
+      prompt="Trails",
+      previewer = false,
+      actions = {
+        ["default"] = function(selected)
+          local trail_name = selected[1]:match("%w+")
+          if trail_name then
+            M.change_trail(trail_name)
+          else
+            vim.notify("No trail selected!", vim.log.levels.WARN)
+          end
+        end,
+        ["ctrl-d"] = function(selected)
+          -- TODO: don't quit after deleting trail.
+          local trail_name = selected[1]:match("%w+")
+          if trail_name then
+            M.remove_trail(trail_name)
+          else
+            vim.notify("No trail selected!", vim.log.levels.WARN)
+          end
+        end,
+      },
+    })
+  end
+end
+
+--[[
+User Commands
+
+Provide a convenient way to interface with TrailMarker using Ex commands.
+
+```
+:TrailMarker <command> <optional-args>
+```
+--]]
+local function_map = {
+  get_current_trail = function() print(M.get_current_trail()) end,
+  get_current_position = function() print(M.get_current_position()) end,
+  new_trail = M.new_trail,
+  change_trail = M.change_trail,
+  remove_trail = M.remove_trail,
+  leave_trail = M.leave_trail,
+  place_marker = M.place_marker,
+  remove_marker = M.remove_marker,
+  current_marker = M.current_marker,
+  next_marker = M.next_marker,
+  prev_marker = M.prev_marker,
+  trail_head = M.trail_head,
+  trail_end = M.trail_end,
+  clear_trail = M.clear_trail,
+  virtual_text_toggle = M.virtual_text_toggle,
+  telescope_trail_map = M.telescope_trail_map,
+  fzf_lua_trail_map = M.fzf_lua_trail_map,
+  fzf_lua_change_trail = M.fzf_lua_change_trail,
 }
+
+local function get_project_trail_names()
+  local dir_path = serde.get_current_project_dir()
+  local trails = {}
+
+  if vim.fn.isdirectory(dir_path) == 1 then
+    local handle = io.popen('ls ' .. dir_path)
+    if handle then
+      for filename in handle:lines() do
+        table.insert(trails, filename)
+      end
+      handle:close()
+    end
+  end
+
+  return trails
+end
+
+vim.api.nvim_create_user_command('TrailMarker', function(opts)
+  local function_name = opts.fargs[1]
+  local additional_arg = opts.fargs[2]
+
+  local func = function_map[function_name]
+
+  if func then
+    if additional_arg == nil then
+      func()
+    else
+      func(additional_arg)
+    end
+  else
+    warning("Invalid function name: " .. function_name)
+  end
+end, {
+  nargs = '*',
+  complete = function(_, cmd_line, _)
+    local args = vim.split(cmd_line, '%s+')
+
+    if #args == 2 then
+      -- Second argument involves typing the function name
+      return vim.tbl_keys(function_map)
+
+    elseif #args == 3 and vim.tbl_contains({"change_trail", "remove_trail"}, args[2]) then
+      -- Third argument requires trail name completion
+      return get_project_trail_names()
+    end
+
+    return {}
+  end
+})
 
 return M

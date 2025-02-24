@@ -1,4 +1,5 @@
 -- Serialize/Deserialize data for persistant storage of plugin data.
+-- TODO: move this code into `utils.lua`
 local M = {}
 
 M.data_dir_path = vim.fn.stdpath("data") .. "/trail_marker"
