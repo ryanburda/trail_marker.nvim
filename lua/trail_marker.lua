@@ -341,80 +341,6 @@ if has_telescope then
 end
 
 --[[
-
-fzf-lua integration
-
---]]
-M.fzf_lua_trail_map = function()
-  -- TODO: add content of line so that it can be searched. (similar being done in telescope integration)
-  local has_fzf_lua, fzf_lua = pcall(require, "fzf-lua")
-
-  if has_fzf_lua then
-    if M.trail == nil or #M.trail.marker_list == 0 then
-      print("No trail markers available")
-      return
-    end
-
-    local entries = {}
-    for _, marker in ipairs(M.trail.marker_list) do
-      --local path = vim.fn.fnamemodify(marker.path, ':.')
-      table.insert(entries, string.format("%s:%s:%s", marker.path, marker.row, marker.col))
-    end
-
-    fzf_lua.fzf_exec(entries, {
-      prompt = "Trail Markers> ",
-      previewer = "builtin",
-      actions = {
-        ["default"] = function(selected)
-          -- TODO: update trail position on selection.
-          --       might need to add position numbers to the picker.
-          local marker_info = selected[1]
-          local path, row, col = marker_info:match("([^:]+):([^:]+):([^:]+)")
-          utils.switch_or_open(path, tonumber(row), tonumber(col))
-        end,
-        ["ctrl-d"] = function(selected)
-          -- TODO: implement logic to remove the marker
-          print("Delete marker:", selected[1])
-        end,
-      },
-    })
-  end
-end
-
-M.fzf_lua_change_trail = function()
-  local has_fzf_lua, fzf_lua = pcall(require, "fzf-lua")
-
-  if has_fzf_lua then
-    fzf_lua.files({
-      cwd=require("trail_marker.serde").get_current_project_dir(),
-      prompt="Trails",
-      previewer = false,
-      actions = {
-        ["default"] = function(selected)
-          local trail_name = selected[1]:match("%w+")
-          if trail_name then
-            M.change_trail(trail_name)
-          else
-            vim.notify("No trail selected!", vim.log.levels.WARN)
-          end
-        end,
-        ["ctrl-d"] = {
-          fn = function(selected)
-            local trail_name = selected[1]:match("%w+")
-            if trail_name then
-              M.remove_trail(trail_name)
-            else
-              vim.notify("No trail selected!", vim.log.levels.WARN)
-            end
-          end,
-          reload = true,
-        },
-      },
-    })
-  end
-end
-
---[[
 User Commands
 
 Provide a convenient way to interface with TrailMarker using Ex commands.
@@ -440,8 +366,6 @@ local function_map = {
   clear_trail = M.clear_trail,
   virtual_text_toggle = M.virtual_text_toggle,
   telescope_trail_map = M.telescope_trail_map,
-  fzf_lua_trail_map = M.fzf_lua_trail_map,
-  fzf_lua_change_trail = M.fzf_lua_change_trail,
 }
 
 local function get_project_trail_names()
