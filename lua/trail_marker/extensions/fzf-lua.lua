@@ -54,7 +54,7 @@ M.trail_map = function()
         utils.switch_or_open(path, tonumber(row), tonumber(col))
         require("trail_marker").trail:goto_marker(tonumber(idx))
       end,
-      ["ctrl-x"] = {
+      ["ctrl-k"] = {
         fn = function(selected)
           local marker_info = selected[1]
           local idx, _, _, _ = marker_info:match("([^:]+):([^:]+):([^:]+):([^:]+)")
@@ -67,32 +67,40 @@ M.trail_map = function()
 end
 
 M.change_trail = function()
-  require("fzf-lua").files({
-    cwd=require("trail_marker.serde").get_current_project_dir(),
-    prompt = "Change Trail> ",
-    previewer = false,
-    actions = {
-      ["default"] = function(selected)
-        local trail_name = selected[1]:match("%w+")
-        if trail_name then
-          trail_marker.change_trail(trail_name)
-        else
-          vim.notify("No trail selected!", vim.log.levels.WARN)
-        end
-      end,
-      ["ctrl-x"] = {
-        fn = function(selected)
+  require("fzf-lua").fzf_exec(
+    function(cb)
+      local trails = require("trail_marker").get_trail_list()
+      for _, trail in ipairs(trails) do
+        cb(trail)
+      end
+      cb()
+    end,
+    {
+      prompt = "Change Trail> ",
+      previewer = false,
+      actions = {
+        ["default"] = function(selected)
           local trail_name = selected[1]:match("%w+")
           if trail_name then
-            trail_marker.remove_trail(trail_name)
+            trail_marker.change_trail(trail_name)
           else
             vim.notify("No trail selected!", vim.log.levels.WARN)
           end
         end,
-        reload = true,
+        ["ctrl-k"] = {
+          fn = function(selected)
+            local trail_name = selected[1]:match("%w+")
+            if trail_name then
+              trail_marker.remove_trail(trail_name)
+            else
+              vim.notify("No trail selected!", vim.log.levels.WARN)
+            end
+          end,
+          reload = true,
+        },
       },
-    },
-  })
+    }
+  )
 end
 
 return M
