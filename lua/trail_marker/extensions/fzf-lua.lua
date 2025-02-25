@@ -96,8 +96,13 @@ M.change_trail = function()
               vim.notify("No trail selected!", vim.log.levels.WARN)
             end
           end,
-          reload = true,
         },
+      },
+      winopts = {
+        width = 0.3,
+        height = 0.3,
+        col = 0.5,  -- Center horizontally
+        row = 0.5,  -- Center vertically
       },
     }
   )
