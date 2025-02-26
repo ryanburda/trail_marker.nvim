@@ -74,7 +74,6 @@ M.switch_or_open = function(path, row, col)
 
   -- set the cursor to the specified line and column
   vim.api.nvim_win_set_cursor(0, {row, col_adjusted})
-  M.warning(string.format("%s:%s", row, col_adjusted))
 end
 
 M.warning = function(msg)
