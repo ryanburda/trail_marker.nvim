@@ -35,7 +35,7 @@ Marker.get_location = function()
   local row, col = unpack(vim.api.nvim_win_get_cursor(0))
   local path = vim.api.nvim_buf_get_name(0)
 
-  return row, col+1, path
+  return row, col, path
 end
 
 return Marker

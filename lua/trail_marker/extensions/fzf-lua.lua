@@ -47,7 +47,7 @@ M.trail_map = function()
 
   local function marker_from_string(str)
     -- This function acts as an fzf-lua specific deserializer.
-    local idx, path, rel_path, row, col, content = str:match("([^:]+):([^:]+):([^:]+):([^:]+):([^:]+):([^:]+)")
+    local idx, path, rel_path, row, col, content = str:match("([^:]+):([^:]+):([^:]+):([^:]+):([^:]+):([^:]*)")
     return idx, path, rel_path, row, col, content
   end
 
@@ -66,8 +66,8 @@ M.trail_map = function()
     local _, path, _, row, col, _ = marker_from_string(entry_str)
     return {
       path = path,
-      line = tonumber(row) or 1,
-      col = col,
+      line = tonumber(row),
+      col = tonumber(col),
     }
   end
 
@@ -80,7 +80,7 @@ M.trail_map = function()
       cb()
     end,
     {
-      prompt = "Trail Markers> ",
+      prompt = string.format("Trail Markers - %s> ", require("trail_marker").trail.name),
       previewer = previewer,
       actions = {
         ["default"] = function(selected)

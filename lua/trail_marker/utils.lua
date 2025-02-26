@@ -21,17 +21,21 @@ M.get_bufnr_by_path = function(path)
 end
 
 M.get_line_length = function(path, row_number)
+  local length = 0
+
   -- Access the current buffer
-  local buf = M.get_bufnr_by_path(path)
+  local bufnr = M.get_bufnr_by_path(path)
 
-  -- Retrieve the specific line's content
-  local row_content = vim.api.nvim_buf_get_lines(buf, row_number - 1, row_number, false)[1]
+  if bufnr ~= nil then
+    -- Retrieve the specific line's content
+    local row_content = vim.api.nvim_buf_get_lines(bufnr, row_number - 1, row_number, false)[1]
 
-  if row_content then
-    return #row_content
-  else
-    return 0
+    if row_content ~= nil then
+      length = #row_content
+    end
   end
+
+  return length
 end
 
 M.get_line_contents = function(path, row)
@@ -53,7 +57,6 @@ M.get_line_contents = function(path, row)
 end
 
 M.switch_or_open = function(path, row, col)
-  -- TODO: allow row and col to be nil to go to the top of the file.
   local bufnr = M.get_bufnr_by_path(path)
 
   if bufnr then
@@ -67,10 +70,11 @@ M.switch_or_open = function(path, row, col)
   -- Handle the case where the content of the line has changed.
   -- Go to the end of the row if the column number exceeds the length of the row.
   local line_length = M.get_line_length(path, row)
-  local col_adjusted = math.max(0, math.min(col-1, line_length))
+  local col_adjusted = math.max(0, math.min(col, line_length))
 
   -- set the cursor to the specified line and column
   vim.api.nvim_win_set_cursor(0, {row, col_adjusted})
+  M.warning(string.format("%s:%s", row, col_adjusted))
 end
 
 M.warning = function(msg)
