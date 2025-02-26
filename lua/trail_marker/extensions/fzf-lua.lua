@@ -35,20 +35,35 @@ M.trail_map = function()
     return
   end
 
+  local function marker_to_string(marker, idx)
+    -- This function acts as an fzf-lua specific serializer.
+    -- The string representation of a marker that is passed to fzf will be as follows.
+    -- `:` is used as a delimiter to allow some of these fields to be hidden with `--with-nth`.
+    local rel_path = vim.fn.fnamemodify(marker.path, ':.')
+    local line_content = utils.get_line_contents(marker.path, marker.row)
+
+    return string.format("%s:%s:%s:%s:%s:%s", idx, marker.path, rel_path, marker.row, marker.col, line_content)
+  end
+
+  local function marker_from_string(str)
+    -- This function acts as an fzf-lua specific deserializer.
+    local idx, path, rel_path, row, col, content = str:match("([^:]+):([^:]+):([^:]+):([^:]+):([^:]+):([^:]+)")
+    return idx, path, rel_path, row, col, content
+  end
+
   -- Make a custom previewer since the entries will not be in the normal path:row:col format
   local builtin = require("fzf-lua.previewer.builtin")
 
-  -- Inherit from the "buffer_or_file" previewer
-  local MyPreviewer = builtin.buffer_or_file:extend()
+  local previewer = builtin.buffer_or_file:extend()
 
-  function MyPreviewer:new(o, opts, fzf_win)
-    MyPreviewer.super.new(self, o, opts, fzf_win)
-    setmetatable(self, MyPreviewer)
+  function previewer:new(o, opts, fzf_win)
+    previewer.super.new(self, o, opts, fzf_win)
+    setmetatable(self, previewer)
     return self
   end
 
-  function MyPreviewer:parse_entry(entry_str)
-    local _, path, row, col = entry_str:match("([^:]+):([^:]+):([^:]+):([^:]+)")
+  function previewer:parse_entry(entry_str)
+    local _, path, _, row, col, _ = marker_from_string(entry_str)
     return {
       path = path,
       line = tonumber(row) or 1,
@@ -58,32 +73,34 @@ M.trail_map = function()
 
   require("fzf-lua").fzf_exec(
     function(cb)
+      -- use a function to support reloads.
       for idx, marker in ipairs(trail_marker.trail.marker_list) do
-        -- TODO: show relative path in picker without breaking preview.
-        -- TODO: add content of line so that it can be searched. (similar being done in telescope integration)
-        -- local path = vim.fn.fnamemodify(marker.path, ':.')
-        cb(string.format("%s:%s:%s:%s", idx, marker.path, marker.row, marker.col))
+        cb(marker_to_string(marker, idx))
       end
       cb()
     end,
     {
       prompt = "Trail Markers> ",
-      previewer = MyPreviewer,
+      previewer = previewer,
       actions = {
         ["default"] = function(selected)
           local marker_info = selected[1]
-          local idx, path, row, col = marker_info:match("([^:]+):([^:]+):([^:]+):([^:]+)")
+          local idx, path, _, row, col, _ = marker_from_string(marker_info)
           utils.switch_or_open(path, tonumber(row), tonumber(col))
           require("trail_marker").trail:goto_marker(tonumber(idx))
         end,
         ["ctrl-k"] = {
           fn = function(selected)
             local marker_info = selected[1]
-            local idx, _, _, _ = marker_info:match("([^:]+):([^:]+):([^:]+):([^:]+)")
+            local idx, _, _, _, _, _ = marker_from_string(marker_info)
             require("trail_marker").trail:remove_marker(tonumber(idx))
           end,
           reload = true,
         },
+      },
+      fzf_opts = {
+        ["--delimiter"] = ":",
+        ["--with-nth"] = "1,3,4,5,6",
       },
     }
   )

@@ -34,6 +34,24 @@ M.get_line_length = function(path, row_number)
   end
 end
 
+M.get_line_contents = function(path, row)
+  -- TODO: See if there is a better way to do this.
+  -- Read the contents of the specific line from the file
+  local line_content = ""
+  if path and row then
+    local file = io.open(path, "r")
+    if file then
+      for _ = 1, row do
+        line_content = file:read("*l")
+        if not line_content then break end
+      end
+      file:close()
+    end
+  end
+
+  return line_content
+end
+
 M.switch_or_open = function(path, row, col)
   -- TODO: allow row and col to be nil to go to the top of the file.
   local bufnr = M.get_bufnr_by_path(path)
@@ -53,7 +71,6 @@ M.switch_or_open = function(path, row, col)
 
   -- set the cursor to the specified line and column
   vim.api.nvim_win_set_cursor(0, {row, col_adjusted})
-
 end
 
 M.warning = function(msg)
