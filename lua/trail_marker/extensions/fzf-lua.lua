@@ -89,14 +89,12 @@ M.trail_map = function()
           utils.switch_or_open(path, tonumber(row), tonumber(col))
           require("trail_marker").trail:goto_marker(tonumber(idx))
         end,
-        ["ctrl-k"] = {
-          fn = function(selected)
-            local marker_info = selected[1]
-            local idx, _, _, _, _, _ = marker_from_string(marker_info)
-            require("trail_marker").trail:remove_marker(tonumber(idx))
-          end,
-          reload = true,
-        },
+        ["ctrl-k"] = function(selected)
+          local marker_info = selected[1]
+          local idx, _, _, _, _, _ = marker_from_string(marker_info)
+          require("trail_marker").trail:remove_marker(tonumber(idx))
+          require("fzf-lua").resume()
+        end,
       },
       fzf_opts = {
         ["--delimiter"] = ":",
@@ -128,17 +126,15 @@ M.change_trail = function()
             vim.notify("No trail selected!", vim.log.levels.WARN)
           end
         end,
-        ["ctrl-k"] = {
-          fn = function(selected)
-            local trail_name = selected[1]:match("%w+")
-            if trail_name then
-              trail_marker.remove_trail(trail_name)
-            else
-              vim.notify("No trail selected!", vim.log.levels.WARN)
-            end
-          end,
-          reload = true,
-        },
+        ["ctrl-k"] = function(selected)
+          local trail_name = selected[1]:match("%w+")
+          if trail_name then
+            trail_marker.remove_trail(trail_name)
+            require("fzf-lua").resume()
+          else
+            vim.notify("No trail selected!", vim.log.levels.WARN)
+          end
+        end,
       },
       winopts = {
         width = 0.3,
