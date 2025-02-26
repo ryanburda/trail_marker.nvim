@@ -67,7 +67,7 @@ M.switch_or_open = function(path, row, col)
   -- Handle the case where the content of the line has changed.
   -- Go to the end of the row if the column number exceeds the length of the row.
   local line_length = M.get_line_length(path, row)
-  local col_adjusted = math.min(col, line_length)
+  local col_adjusted = math.max(0, math.min(col-1, line_length))
 
   -- set the cursor to the specified line and column
   vim.api.nvim_win_set_cursor(0, {row, col_adjusted})
