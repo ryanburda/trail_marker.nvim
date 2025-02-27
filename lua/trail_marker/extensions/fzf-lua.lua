@@ -30,6 +30,7 @@ vim.keymap.set(
 local trail_marker = require("trail_marker")
 local utils = require("trail_marker.utils")
 local fzf_utils = require("fzf-lua.utils")
+local devicons = require("nvim-web-devicons")
 
 local M = {}
 
@@ -38,28 +39,37 @@ local keymap_header = function(key, purpose)
 end
 
 M.trail_map = function()
-  if trail_marker.trail == nil or #trail_marker.trail.marker_list == 0 then
+  if not trail_marker.trail or #trail_marker.trail.marker_list == 0 then
     print("No trail markers available")
     return
   end
 
   local function marker_to_string(marker, idx)
-    -- This function acts as an fzf-lua specific serializer.
-    -- The string representation of a marker that is passed to fzf will be as follows.
-    -- `:` is used as a delimiter to allow some of these fields to be hidden with `--with-nth`.
-    local rel_path = vim.fn.fnamemodify(marker.path, ':.')
-    local line_content = utils.get_line_contents(marker.path, marker.row)
+    local icon, hl = devicons.get_icon_color(marker.path, nil, {default = true})
+    local colored_icon = fzf_utils.ansi_from_rgb(hl, icon)
+    local idx_colored = fzf_utils.ansi_codes.magenta(tostring(idx))
+    local path = fzf_utils.ansi_codes.blue(vim.fn.fnamemodify(marker.path, ":."))
+    local row = fzf_utils.ansi_codes.green(tostring(marker.row))
+    local col = fzf_utils.ansi_codes.yellow(tostring(marker.col))
+    local content = utils.get_line_contents(marker.path, marker.row)
 
-    return string.format("%s:%s:%s:%s:%s:%s", idx, marker.path, rel_path, marker.row, marker.col, line_content)
+    local picker_str = string.format("%s %s:%s:%s:%s:%s", colored_icon, idx_colored, path, row, col, content)
+
+    return string.format("%s|%s|%s|%s|%s", idx, marker.path, marker.row, marker.col, picker_str)
   end
 
   local function marker_from_string(str)
-    -- This function acts as an fzf-lua specific deserializer.
-    local idx, path, rel_path, row, col, content = str:match("([^:]+):([^:]+):([^:]+):([^:]+):([^:]+):([^:]*)")
-    return idx, path, rel_path, row, col, content
+    local idx, path, row, col, picker_str = str:match("([^:]+)|([^:]+)|([^:]+)|([^:]+)|([^:]+)")
+
+    return {
+      idx = idx,
+      path = path,
+      row = row,
+      col = col,
+      picker_str = picker_str,
+    }
   end
 
-  -- Make a custom previewer since the entries will not be in the normal path:row:col format
   local builtin = require("fzf-lua.previewer.builtin")
 
   local previewer = builtin.buffer_or_file:extend()
@@ -71,22 +81,21 @@ M.trail_map = function()
   end
 
   function previewer:parse_entry(entry_str)
-    local _, path, _, row, col, _ = marker_from_string(entry_str)
+    local t = marker_from_string(entry_str)
     return {
-      path = path,
-      line = tonumber(row),
-      col = tonumber(col),
+      idx = tonumber(t.idx),
+      path = t.path,
+      line = tonumber(t.row),
+      col = tonumber(t.col),
     }
   end
 
-  -- Header string
   local ctrl_x = keymap_header("ctrl-x", "Remove Marker")
   local ctrl_c = keymap_header("ctrl-c", "Clear Trail")
   local header = string.format(":: %s | %s", ctrl_x, ctrl_c)
 
   require("fzf-lua").fzf_exec(
     function(cb)
-      -- use a function to support reloads.
       for idx, marker in ipairs(trail_marker.trail.marker_list) do
         cb(marker_to_string(marker, idx))
       end
@@ -98,14 +107,14 @@ M.trail_map = function()
       actions = {
         ["default"] = function(selected)
           local marker_info = selected[1]
-          local idx, path, _, row, col, _ = marker_from_string(marker_info)
-          utils.switch_or_open(path, tonumber(row), tonumber(col))
-          require("trail_marker").trail:goto_marker(tonumber(idx))
+          local t = marker_from_string(marker_info)
+          utils.switch_or_open(t.path, tonumber(t.row), tonumber(t.col))
+          require("trail_marker").trail:goto_marker(tonumber(t.idx))
         end,
         ["ctrl-x"] = function(selected)
           local marker_info = selected[1]
-          local idx, _, _, _, _, _ = marker_from_string(marker_info)
-          require("trail_marker").trail:remove_marker(tonumber(idx))
+          local t = marker_from_string(marker_info)
+          require("trail_marker").trail:remove_marker(tonumber(t.idx))
           require("fzf-lua").resume()
         end,
         ["ctrl-c"] = function(_)
@@ -114,8 +123,8 @@ M.trail_map = function()
         end,
       },
       fzf_opts = {
-        ["--delimiter"] = ":",
-        ["--with-nth"] = "1,3,4,5,6",
+        ["--delimiter"] = "|",
+        ["--with-nth"] = "5",
         ["--header"] = header,
       },
     }
