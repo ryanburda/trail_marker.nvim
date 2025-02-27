@@ -95,6 +95,10 @@ M.trail_map = function()
           require("trail_marker").trail:remove_marker(tonumber(idx))
           require("fzf-lua").resume()
         end,
+        ["ctrl-x"] = function(_)
+          require("trail_marker").clear_trail()
+          require("fzf-lua").resume()
+        end,
       },
       fzf_opts = {
         ["--delimiter"] = ":",
