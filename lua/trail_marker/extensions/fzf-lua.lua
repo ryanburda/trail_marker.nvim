@@ -6,6 +6,9 @@ NOTES:
   - This should only be used if fzf-lua is installed.
   - This should only be used after Trail Marker has been set up.
 
+TODO: Break this up into more reusable pieces. A default fzf-lua integration
+      should exist but it should also be easily possible to customize.
+
 Example usage:
 ```lua
 vim.keymap.set(
