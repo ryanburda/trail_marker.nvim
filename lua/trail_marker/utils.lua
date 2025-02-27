@@ -1,5 +1,12 @@
 local M = {}
 
+M.get_location = function()
+  local row, col = unpack(vim.api.nvim_win_get_cursor(0))
+  local path = vim.api.nvim_buf_get_name(0)
+
+  return row, col, path
+end
+
 M.get_bufnr_by_path = function(path)
   -- Get the list of all buffer numbers
   local buffers = vim.api.nvim_list_bufs()

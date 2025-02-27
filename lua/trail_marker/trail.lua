@@ -4,6 +4,7 @@ Multiple markers make a trail.
 
 --]]
 local marker = require("trail_marker.marker")
+local utils = require("trail_marker.utils")
 
 local Trail = {}
 Trail.__index = Trail
@@ -157,7 +158,7 @@ function Trail:build_marker_map()
 end
 
 function Trail:get_markers_at_location()
-  local row, _, path = marker.get_location();
+  local row, _, path = utils.get_location();
 
   if self.marker_map[path] ~= nil and self.marker_map[path][row] ~= nil then  -- Is there a better way to avoid nil?
     return self.marker_map[path][row].markers
