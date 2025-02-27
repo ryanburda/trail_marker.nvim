@@ -4,7 +4,6 @@ Lua api of the plugin.
 
 --]]
 local trail = require("trail_marker.trail")
-local serde = require("trail_marker.serde")
 local utils = require("trail_marker.utils")
 
 local M = {}
@@ -122,7 +121,7 @@ M.virtual_text_toggle = function()
 end
 
 M.new_trail = function(trail_name)
-  local trail_file = string.format("%s/%s", serde.get_current_project_dir(), trail_name)
+  local trail_file = string.format("%s/%s", utils.get_current_project_dir(), trail_name)
   local file, _ = io.open(trail_file, "r")
 
   if file then
@@ -134,14 +133,14 @@ M.new_trail = function(trail_name)
 end
 
 M.change_trail = function(trail_name)
-  local trail_file = string.format("%s/%s", serde.get_current_project_dir(), trail_name)
+  local trail_file = string.format("%s/%s", utils.get_current_project_dir(), trail_name)
   local file, _ = io.open(trail_file, "r")
 
   if file then
     local content = file:read("*a")
     file:close()
 
-    local deserialized_trail = serde.deserialize(content)
+    local deserialized_trail = utils.deserialize(content)
     M.trail = trail.from_table(deserialized_trail)
     vim.api.nvim_exec_autocmds('User', { pattern = 'TrailMarkerEventTrailChanged' })
   else
@@ -150,7 +149,7 @@ M.change_trail = function(trail_name)
 end
 
 M.remove_trail = function(trail_name)
-  local trail_file = string.format("%s/%s", serde.get_current_project_dir(), trail_name)
+  local trail_file = string.format("%s/%s", utils.get_current_project_dir(), trail_name)
   local file, _ = io.open(trail_file, "r")
 
   if file then
@@ -191,7 +190,7 @@ M.get_trail_list = function()
   local trails = {}
 
   -- Use `ls` command to list files in the directory
-  local p = io.popen('ls -p "' .. serde.get_current_project_dir() .. '"')  -- -p appends a / to directories
+  local p = io.popen('ls -p "' .. utils.get_current_project_dir() .. '"')  -- -p appends a / to directories
   for file in p:lines() do
     -- Check that the file does not end with `/` to exclude directories
     if not file:match("/$") then
@@ -285,7 +284,7 @@ local function_map = {
 }
 
 local function get_project_trail_names()
-  local dir_path = serde.get_current_project_dir()
+  local dir_path = utils.get_current_project_dir()
   local trails = {}
 
   if vim.fn.isdirectory(dir_path) == 1 then

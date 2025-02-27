@@ -375,18 +375,16 @@ end
 --   },
 -- }
 -- ```
-local serde = require("trail_marker.serde")
-
 function Trail:get_save_file_path()
   return string.format(
     "%s/%s",
-    serde.get_current_project_dir(),
+    utils.get_current_project_dir(),
     self.name
   )
 end
 
 function Trail:save_trail()
-  serde.write_to_file(serde.serialize(self), self:get_save_file_path())
+  utils.write_to_file(utils.serialize(self), self:get_save_file_path())
 end
 
 return Trail
