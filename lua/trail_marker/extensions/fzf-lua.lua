@@ -30,6 +30,10 @@ local fzf_utils = require("fzf-lua.utils")
 
 local M = {}
 
+local keymap_header = function(key, purpose)
+  return string.format("<%s> to %s", fzf_utils.ansi_codes.yellow(key), fzf_utils.ansi_codes.red(purpose))
+end
+
 M.trail_map = function()
   if trail_marker.trail == nil or #trail_marker.trail.marker_list == 0 then
     print("No trail markers available")
@@ -72,8 +76,9 @@ M.trail_map = function()
     }
   end
 
-  local ctrl_k = string.format("<%s> to %s", fzf_utils.ansi_codes.yellow("ctrl-k"), fzf_utils.ansi_codes.red("Remove Marker"))
-  local ctrl_x = string.format("<%s> to %s", fzf_utils.ansi_codes.yellow("ctrl-x"), fzf_utils.ansi_codes.red("Clear Trail"))
+  -- Header string
+  local ctrl_k = keymap_header("ctrl-k", "Remove Marker")
+  local ctrl_x = keymap_header("ctrl-x", "Clear Trail")
   local header = string.format(":: %s | %s", ctrl_k, ctrl_x)
 
   require("fzf-lua").fzf_exec(
@@ -115,6 +120,11 @@ M.trail_map = function()
 end
 
 M.change_trail = function()
+  -- Header string
+  local ctrl_k = keymap_header("ctrl-k", "Remove Trail")
+  local new_trail = "Type new trail name to create"
+  local header = string.format(":: %s | %s", ctrl_k, new_trail)
+
   require("fzf-lua").fzf_exec(
     function(cb)
       -- use a function to support reloads.
@@ -129,11 +139,24 @@ M.change_trail = function()
       previewer = false,
       actions = {
         ["default"] = function(selected)
-          local trail_name = selected[1]:match("%w+")
-          if trail_name then
-            trail_marker.change_trail(trail_name)
+          local input
+
+          if selected and #selected > 0 then
+            -- If something is selected, fetch the trail name
+            local trail_name = selected[1]:match("%w+")
+            if trail_name then
+              trail_marker.change_trail(trail_name)
+            else
+              vim.notify("Invalid selection!", vim.log.levels.WARN)
+            end
           else
-            vim.notify("No trail selected!", vim.log.levels.WARN)
+            -- No selection (use current query to create a new trail)
+            input = require("fzf-lua").get_last_query()
+            if input then
+              trail_marker.new_trail(input)
+            else
+              vim.notify("No valid input to create a new trail!", vim.log.levels.WARN)
+            end
           end
         end,
         ["ctrl-k"] = function(selected)
@@ -147,10 +170,13 @@ M.change_trail = function()
         end,
       },
       winopts = {
-        width = 0.3,
-        height = 0.3,
+        width = 0.4,
+        height = 0.4,
         col = 0.5,  -- Center horizontally
         row = 0.5,  -- Center vertically
+      },
+      fzf_opts = {
+        ["--header"] = header,
       },
     }
   )
