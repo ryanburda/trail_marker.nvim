@@ -26,6 +26,7 @@ vim.keymap.set(
 --]]
 local trail_marker = require("trail_marker")
 local utils = require("trail_marker.utils")
+local fzf_utils = require("fzf-lua.utils")
 
 local M = {}
 
@@ -71,6 +72,10 @@ M.trail_map = function()
     }
   end
 
+  local ctrl_k = string.format("<%s> to %s", fzf_utils.ansi_codes.yellow("ctrl-k"), fzf_utils.ansi_codes.red("Remove Marker"))
+  local ctrl_x = string.format("<%s> to %s", fzf_utils.ansi_codes.yellow("ctrl-x"), fzf_utils.ansi_codes.red("Clear Trail"))
+  local header = string.format(":: %s | %s", ctrl_k, ctrl_x)
+
   require("fzf-lua").fzf_exec(
     function(cb)
       -- use a function to support reloads.
@@ -103,6 +108,7 @@ M.trail_map = function()
       fzf_opts = {
         ["--delimiter"] = ":",
         ["--with-nth"] = "1,3,4,5,6",
+        ["--header"] = header,
       },
     }
   )
