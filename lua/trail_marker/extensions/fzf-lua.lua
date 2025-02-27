@@ -77,9 +77,9 @@ M.trail_map = function()
   end
 
   -- Header string
-  local ctrl_k = keymap_header("ctrl-k", "Remove Marker")
-  local ctrl_x = keymap_header("ctrl-x", "Clear Trail")
-  local header = string.format(":: %s | %s", ctrl_k, ctrl_x)
+  local ctrl_x = keymap_header("ctrl-x", "Remove Marker")
+  local ctrl_c = keymap_header("ctrl-c", "Clear Trail")
+  local header = string.format(":: %s | %s", ctrl_x, ctrl_c)
 
   require("fzf-lua").fzf_exec(
     function(cb)
@@ -99,13 +99,13 @@ M.trail_map = function()
           utils.switch_or_open(path, tonumber(row), tonumber(col))
           require("trail_marker").trail:goto_marker(tonumber(idx))
         end,
-        ["ctrl-k"] = function(selected)
+        ["ctrl-x"] = function(selected)
           local marker_info = selected[1]
           local idx, _, _, _, _, _ = marker_from_string(marker_info)
           require("trail_marker").trail:remove_marker(tonumber(idx))
           require("fzf-lua").resume()
         end,
-        ["ctrl-x"] = function(_)
+        ["ctrl-c"] = function(_)
           require("trail_marker").clear_trail()
           require("fzf-lua").resume()
         end,
@@ -121,9 +121,9 @@ end
 
 M.change_trail = function()
   -- Header string
-  local ctrl_k = keymap_header("ctrl-k", "Remove Trail")
+  local ctrl_x = keymap_header("ctrl-x", "Remove Trail")
   local new_trail = "Type new trail name to create"
-  local header = string.format(":: %s | %s", ctrl_k, new_trail)
+  local header = string.format(":: %s | %s", ctrl_x, new_trail)
 
   require("fzf-lua").fzf_exec(
     function(cb)
@@ -159,7 +159,7 @@ M.change_trail = function()
             end
           end
         end,
-        ["ctrl-k"] = function(selected)
+        ["ctrl-x"] = function(selected)
           local trail_name = selected[1]:match("%w+")
           if trail_name then
             trail_marker.remove_trail(trail_name)
