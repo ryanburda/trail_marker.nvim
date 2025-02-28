@@ -6,9 +6,6 @@ NOTES:
   - This should only be used if fzf-lua is installed.
   - This should only be used after Trail Marker has been set up.
 
-TODO: Break this up into more reusable pieces. A default fzf-lua integration
-      should exist but it should also be easily possible to customize.
-
 Example usage:
 ```lua
 vim.keymap.set(
@@ -39,8 +36,8 @@ local keymap_header = function(key, purpose)
 end
 
 M.trail_map = function()
-  if not trail_marker.trail or #trail_marker.trail.marker_list == 0 then
-    print("No trail markers available")
+  if not trail_marker.trail then
+    utils.no_current_trail_warning()
     return
   end
 
@@ -59,15 +56,17 @@ M.trail_map = function()
   end
 
   local function marker_from_string(str)
-    local idx, path, row, col, picker_str = str:match("([^:]+)|([^:]+)|([^:]+)|([^:]+)|([^:]+)")
+    if str then
+      local idx, path, row, col, picker_str = str:match("([^:]+)|([^:]+)|([^:]+)|([^:]+)|([^:]+)")
 
-    return {
-      idx = idx,
-      path = path,
-      row = row,
-      col = col,
-      picker_str = picker_str,
-    }
+      return {
+        idx = idx,
+        path = path,
+        row = row,
+        col = col,
+        picker_str = picker_str,
+      }
+    end
   end
 
   local builtin = require("fzf-lua.previewer.builtin")
@@ -107,15 +106,23 @@ M.trail_map = function()
       previewer = previewer,
       actions = {
         ["default"] = function(selected)
+          if selected[1] == nil then
+            return
+          end
+
           local marker_info = selected[1]
-          local t = marker_from_string(marker_info)
-          utils.switch_or_open(t.path, tonumber(t.row), tonumber(t.col))
-          require("trail_marker").trail:goto_marker(tonumber(t.idx))
+          if marker_info then
+            local t = marker_from_string(marker_info)
+            utils.switch_or_open(t.path, tonumber(t.row), tonumber(t.col))
+            require("trail_marker").trail:goto_marker(tonumber(t.idx))
+          end
         end,
         ["ctrl-x"] = function(selected)
-          local marker_info = selected[1]
-          local t = marker_from_string(marker_info)
-          require("trail_marker").trail:remove_marker(tonumber(t.idx))
+          if selected[1] ~= nil then
+            local marker_info = selected[1]
+            local t = marker_from_string(marker_info)
+            require("trail_marker").trail:remove_marker(tonumber(t.idx))
+          end
           require("fzf-lua").resume()
         end,
         ["ctrl-c"] = function(_)
@@ -160,7 +167,7 @@ M.change_trail = function()
 
           if selected and #selected > 0 then
             -- If something is selected, fetch the trail name
-            local trail_name = selected[1]:match("%w+")
+            local trail_name = selected[1]
             if trail_name then
               trail_marker.change_trail(trail_name)
             else
@@ -177,13 +184,13 @@ M.change_trail = function()
           end
         end,
         ["ctrl-x"] = function(selected)
-          local trail_name = selected[1]:match("%w+")
-          if trail_name then
-            trail_marker.remove_trail(trail_name)
-            require("fzf-lua").resume()
-          else
-            vim.notify("No trail selected!", vim.log.levels.WARN)
+          if selected[1] ~= nil then
+            local trail_name = selected[1]
+            if trail_name then
+              trail_marker.remove_trail(trail_name)
+            end
           end
+          require("fzf-lua").resume()
         end,
         ["ctrl-l"] = function(_)
           require("trail_marker").leave_trail()
