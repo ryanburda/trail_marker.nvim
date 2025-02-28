@@ -52,6 +52,10 @@ M.trail_map = function()
 
     local picker_str = string.format("%s %s:%s:%s:%s:%s", colored_icon, idx_colored, path, row, col, content)
 
+    -- `picker_str` must go last since the line `content` within it may contain the pipe delimiter.
+    -- Having delimiters where we don't expect them would cause issues in `marker_from_string`.
+    --
+    -- Update fzf_opts `--with-nth` below if the position of the `picker_str` changes.
     return string.format("%s|%s|%s|%s|%s", idx, marker.path, marker.row, marker.col, picker_str)
   end
 
