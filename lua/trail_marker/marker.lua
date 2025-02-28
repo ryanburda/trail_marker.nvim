@@ -27,7 +27,6 @@ function Marker.from_table(t)
 end
 
 function Marker:goto()
-  -- open the file
   utils.switch_or_open(self.path, self.row, self.col)
 end
 
