@@ -92,7 +92,8 @@ M.trail_map = function()
 
   local ctrl_x = keymap_header("ctrl-x", "Remove Marker")
   local ctrl_c = keymap_header("ctrl-c", "Clear Trail")
-  local header = string.format(":: %s | %s", ctrl_x, ctrl_c)
+  local ctrl_l = keymap_header("ctrl-l", "Leave Trail")
+  local header = string.format(":: %s | %s | %s", ctrl_x, ctrl_c, ctrl_l)
 
   require("fzf-lua").fzf_exec(
     function(cb)
@@ -121,6 +122,9 @@ M.trail_map = function()
           require("trail_marker").clear_trail()
           require("fzf-lua").resume()
         end,
+        ["ctrl-l"] = function(_)
+          require("trail_marker").leave_trail()
+        end,
       },
       fzf_opts = {
         ["--delimiter"] = "|",
@@ -134,8 +138,9 @@ end
 M.change_trail = function()
   -- Header string
   local ctrl_x = keymap_header("ctrl-x", "Remove Trail")
+  local ctrl_l = keymap_header("ctrl-l", "Leave Trail")
   local new_trail = "Type new trail name to create"
-  local header = string.format(":: %s | %s", ctrl_x, new_trail)
+  local header = string.format(":: %s\n%s | %s", new_trail, ctrl_x, ctrl_l)
 
   require("fzf-lua").fzf_exec(
     function(cb)
@@ -179,6 +184,9 @@ M.change_trail = function()
           else
             vim.notify("No trail selected!", vim.log.levels.WARN)
           end
+        end,
+        ["ctrl-l"] = function(_)
+          require("trail_marker").leave_trail()
         end,
       },
       winopts = {
