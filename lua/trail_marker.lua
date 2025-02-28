@@ -241,11 +241,9 @@ vim.api.nvim_create_autocmd('User', {
       local pos_str = tostring(pos)
 
       if pos == 0 then
-        pos_str = "*"
-      elseif pos == 1 then
-        pos_str = "HEAD"
-      elseif pos == #M.trail.marker_list and pos ~= 1 then
-        pos_str = "END"
+        pos_str = "-"
+      elseif pos == #M.trail.marker_list then
+        pos_str = pos_str .. "*"
       end
 
       vim.g.trail_marker_info = string.format("%s:%s", name, pos_str)

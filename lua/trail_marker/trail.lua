@@ -191,7 +191,7 @@ function Trail:remove_marker(pos)
   end
 
   -- Make sure we didn't fall off the trail.
-  if self.trail_pos < 1 and self.trail ~= nil and #self.trail > 0 then
+  if self.trail_pos < 1 and #self.marker_list > 0 then
     self.trail_pos = 1
   end
 
