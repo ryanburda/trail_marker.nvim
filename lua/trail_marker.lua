@@ -278,7 +278,6 @@ local function_map = {
   trail_end = M.trail_end,
   clear_trail = M.clear_trail,
   virtual_text_toggle = M.virtual_text_toggle,
-  telescope_trail_map = M.telescope_trail_map,
 }
 
 local function get_project_trail_names()
