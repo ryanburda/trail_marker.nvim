@@ -63,26 +63,6 @@ M.get_line_contents = function(path, row)
   return line_content
 end
 
-M.switch_or_open = function(path, row, col)
-  local bufnr = M.get_bufnr_by_path(path)
-
-  if bufnr then
-    -- If the buffer exists, switch to it
-    vim.api.nvim_set_current_buf(bufnr)
-  else
-    -- Otherwise, open the file in a new buffer
-    vim.cmd('edit ' .. vim.fn.fnameescape(path))
-  end
-
-  -- Handle the case where the content of the line has changed.
-  -- Go to the end of the row if the column number exceeds the length of the row.
-  local line_length = M.get_line_length(path, row)
-  local col_adjusted = math.max(0, math.min(col, line_length))
-
-  -- set the cursor to the specified line and column
-  vim.api.nvim_win_set_cursor(0, {row, col_adjusted})
-end
-
 M.warning = function(msg)
   vim.api.nvim_echo({ { msg, 'WarningMsg' } }, false, {})
 end

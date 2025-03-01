@@ -124,7 +124,6 @@ M.trail_map = function()
           local marker_info = selected[1]
           if marker_info then
             local t = marker_from_string(marker_info)
-            utils.switch_or_open(t.path, tonumber(t.row), tonumber(t.col))
             require("trail_marker").trail:goto_marker(tonumber(t.idx))
           end
         end,
