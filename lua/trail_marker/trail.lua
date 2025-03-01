@@ -3,6 +3,7 @@
 Multiple markers make a trail.
 
 --]]
+
 local marker = require("trail_marker.marker")
 local utils = require("trail_marker.utils")
 
@@ -41,7 +42,7 @@ function Trail.from_table(t)
   local marker_list = {}
 
   for _, marker_dict in ipairs(t.marker_list) do
-    table.insert(marker_list, marker.from_table(marker_dict))
+    table.insert(marker_list, marker.new(marker_dict.path, marker_dict.row, marker_dict.col))
   end
 
   self.marker_list = marker_list
@@ -158,7 +159,7 @@ function Trail:build_marker_map()
 end
 
 function Trail:get_markers_at_location()
-  local row, _, path = utils.get_location();
+  local path, row, _ = utils.get_location();
 
   if self.marker_map[path] ~= nil and self.marker_map[path][row] ~= nil then  -- Is there a better way to avoid nil?
     return self.marker_map[path][row].markers
@@ -167,7 +168,7 @@ end
 
 function Trail:place_marker()
   self.trail_pos = self.trail_pos + 1
-  local b = marker.new()
+  local b = marker.from_cursor_location()
 
   table.insert(self.marker_list, self.trail_pos, b)
   self:build_marker_map()
