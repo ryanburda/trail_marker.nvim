@@ -68,11 +68,11 @@ M.warning = function(msg)
 end
 
 M.no_current_trail_warning = function()
-  M.warning("TrailMarker: No current trail. Use `:TrailMarker change_trail <trail_name>` or `:TrailMarker new_trail <trail_name>`")
+  M.warning("No current trail. Use `:TrailMarker change_trail <trail_name>` or `:TrailMarker new_trail <trail_name>`")
 end
 
-M.no_markers_on_trail_warning = function()
-  M.warning("TrailMarker: No markers on trail.")
+M.no_markers_on_trail_warning = function(trail_name)
+  M.warning(string.format("No markers on trail %s", trail_name))
 end
 
 --[[

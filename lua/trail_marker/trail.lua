@@ -7,9 +7,19 @@ Multiple markers make a trail.
 local marker = require("trail_marker.marker")
 local utils = require("trail_marker.utils")
 
+--- @class Trail
+--- @field name string
+--- @field trail_pos number
+--- @field marker_list table
+--- @field ns_id number
+--- @field is_virtual_text_on boolean
+--- @field marker_map table
 local Trail = {}
 Trail.__index = Trail
 
+--- Creates a new Trail instance.
+--- @param name string: The name of the trail.
+--- @return Trail: A new trail instance.
 function Trail.new(name)
   local self = setmetatable({}, Trail)
 
@@ -29,6 +39,9 @@ function Trail.new(name)
   return self
 end
 
+--- Creates a Trail instance from a table.
+--- @param t table: The table representation of a trail.
+--- @return Trail: A new trail instance created from the table.
 function Trail.from_table(t)
   -- TODO: get rid of duplication with `Trail.new`.
   local self = setmetatable({}, Trail)
@@ -55,6 +68,7 @@ function Trail.from_table(t)
   return self
 end
 
+--- Sets up autocommands for the Trail instance.
 function Trail:setup_autocmd()
   -- autocommand to add virtual text to newly opened buffers.
   vim.api.nvim_create_augroup('trail_marker', { clear = true })
@@ -72,6 +86,7 @@ function Trail:setup_autocmd()
   })
 end
 
+--- Builds a marker map for fast lookup.
 function Trail:build_marker_map()
   --[[
   `Trail.marker_list` -> `Trail.marker_map` conversion.
@@ -80,8 +95,9 @@ function Trail:build_marker_map()
   The list of markers will still be used to preserve the order of markings.
   This table will make it easier to remove markers and handle virtual text.
 
-  The cost of maintaining two different representations of the same data should pay off by avoiding situations
-  where we need to rip through the entire markers list to perform an operation.
+  The cost of maintaining two different representations of the same data should pay off since we'll only
+  be calling this function whenever the marker_list changes. If we didn't have this secondary representation
+  we'd need to write similar code that that is called far more frequently, like every buf open or virtual text toggle.
 
   NOTE: it is important to call this function whenever the set of markers changes to keep the list and map in sync.
 
@@ -158,14 +174,17 @@ function Trail:build_marker_map()
   self.marker_map = marker_map
 end
 
+--- Gets markers at current location.
+--- @return table | nil: Returns a table of markers at current location or nil if none exist.
 function Trail:get_markers_at_location()
-  local path, row, _ = utils.get_location();
+  local path, row, _ = utils.get_location()
 
-  if self.marker_map[path] ~= nil and self.marker_map[path][row] ~= nil then  -- Is there a better way to avoid nil?
+  if self.marker_map[path] ~= nil and self.marker_map[path][row] ~= nil then
     return self.marker_map[path][row].markers
   end
 end
 
+--- Places a new marker at the current cursor position.
 function Trail:place_marker()
   self.trail_pos = self.trail_pos + 1
   local b = marker.from_cursor_location()
@@ -178,6 +197,8 @@ function Trail:place_marker()
   vim.api.nvim_exec_autocmds('User', { pattern = 'TrailMarkerEvent' })
 end
 
+--- Removes a marker at a given position.
+--- @param pos number: The position of the marker to remove.
 function Trail:remove_marker(pos)
   table.remove(self.marker_list, pos)
 
@@ -200,6 +221,7 @@ function Trail:remove_marker(pos)
   vim.api.nvim_exec_autocmds('User', { pattern = 'TrailMarkerEventPositionUpdate' })
 end
 
+--- Removes a marker at the current cursor location.
 function Trail:remove_marker_at_location()
   local marker_positions = self:get_markers_at_location()
 
@@ -229,6 +251,8 @@ function Trail:remove_marker_at_location()
   end
 end
 
+--- Goes to a specific marker position.
+--- @param pos number: The position of the marker to go to.
 function Trail:goto_marker(pos)
   if 0 < pos and pos <= #self.marker_list then
     self.trail_pos = pos
@@ -240,30 +264,36 @@ function Trail:goto_marker(pos)
   self:save_trail()
 end
 
+--- Jumps to the current marker in the trail.
 function Trail:current_marker()
   self:goto_marker(self.trail_pos)
 end
 
+--- Jumps to the next marker in the trail.
 function Trail:next_marker()
   self:goto_marker(self.trail_pos + 1)
   self:save_trail()
 end
 
+--- Jumps to the previous marker in the trail.
 function Trail:prev_marker()
   self:goto_marker(self.trail_pos - 1)
   self:save_trail()
 end
 
+--- Jumps to the first marker in the trail.
 function Trail:trail_head()
   self:goto_marker(1)
   self:save_trail()
 end
 
+--- Jumps to the last marker in the trail.
 function Trail:trail_end()
   self:goto_marker(#self.marker_list)
   self:save_trail()
 end
 
+--- Clears all markers from the trail.
 function Trail:clear_trail()
   self.marker_list = {}
   self.trail_pos = 0
@@ -274,13 +304,15 @@ function Trail:clear_trail()
   vim.api.nvim_exec_autocmds('User', { pattern = 'TrailMarkerEventPositionUpdate' })
 end
 
+--- Prints the trail map to the output.
 function Trail:trail_map()
   print(vim.inspect(self.marker_list))
 end
 
 -- Virtual Text
 --
--- Provide indicators of where trail markers are as virtual text.
+--- Updates virtual text for a specific buffer number.
+--- @param bufnr number: The buffer number to update virtual text for.
 function Trail:virtual_text_update_bufnr(bufnr)
   if self.is_virtual_text_on then
     vim.api.nvim_buf_clear_namespace(bufnr, self.ns_id, 0, -1)
@@ -302,6 +334,7 @@ function Trail:virtual_text_update_bufnr(bufnr)
   end
 end
 
+--- Updates virtual text for all buffers.
 function Trail:virtual_text_update_all_bufs()
   local bufnrs = vim.api.nvim_list_bufs()
 
@@ -310,11 +343,13 @@ function Trail:virtual_text_update_all_bufs()
   end
 end
 
+--- Turns virtual text on.
 function Trail:virtual_text_on()
   self.is_virtual_text_on = true
   self:virtual_text_update_all_bufs()
 end
 
+--- Turns virtual text off.
 function Trail:virtual_text_off()
   self.is_virtual_text_on = false
   local bufnrs = vim.api.nvim_list_bufs()
@@ -324,6 +359,7 @@ function Trail:virtual_text_off()
   end
 end
 
+--- Toggles virtual text on and off.
 function Trail:virtual_text_toggle()
   if self.is_virtual_text_on then
     self:virtual_text_off()
@@ -332,60 +368,28 @@ function Trail:virtual_text_toggle()
   end
 end
 
--- Serialize/Deserialize
---
--- To keep things simple a project will be determined by the the current working directory.
--- This means if your cwd is `~/project1` you will not see any of the trails associated with `~/project2`.
--- Note: This may change in the future to be aware of git repos.
---
--- The absolute path of each project will be hashed to produce a unique project directory name.
--- Inside each project directory will be a set of files for each trail.
---
--- ~/.local/share/nvim/trail_marker/trails/
---                                      -> 1234abcd/
---                                               -> trail1
---                                               -> trail2
---                                               -> trail3
---                                      -> 5678efgh/
---                                               -> debug
---                                               -> ticket123
---
--- Each trail file will contain the entire trail serialized.
--- ```
--- {
---   ["is_virtual_text_on"] = true,
---   ["marker_list"] = {
---     [1] = {
---       ["row"] = 334,
---       ["col"] = 3,
---       ["path"] = "path/to/file",
---     },
---   },
---   ["trail_pos"] = 1,
---   ["name"] = "trail",
---   ["ns_id"] = 25,
---   ["marker_map"] = {
---     ["path/to/file"] = {
---       [334] = {
---         ["markers"] = {
---           [1] = 1,
---         },
---         ["virtual_text"] = "trail 1",
---       },
---     },
---   },
--- }
--- ```
-function Trail:get_save_file_path()
-  return string.format(
-    "%s/%s",
-    utils.get_current_project_dir(),
-    self.name
-  )
-end
-
+--- Saves the trail to a file.
+---
+--- To keep things simple a project will be determined by the the current working directory.
+--- This means if your cwd is `~/project1` you will not see any of the trails associated with `~/project2`.
+--- NOTE: This may change in the future to be aware of git repos.
+---
+--- The absolute path of each project will be hashed to produce a unique project directory name.
+--- Inside each project directory will be a set of files for each trail.
+---
+--- ~/.local/share/nvim/trail_marker/trails/
+---                                      -> 1234abcd/
+---                                               -> trail1
+---                                               -> trail2
+---                                               -> trail3
+---                                      -> 5678efgh/
+---                                               -> debug
+---                                               -> ticket123
+---
+--- Each trail file will contain the entire trail serialized.
 function Trail:save_trail()
-  utils.write_to_file(utils.serialize(self), self:get_save_file_path())
+  local save_file = string.format("%s/%s", utils.get_current_project_dir(), self.name)
+  utils.write_to_file(utils.serialize(self), save_file)
 end
 
 return Trail
