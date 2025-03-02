@@ -177,7 +177,7 @@ end
 --- Gets markers at current location.
 --- @return table | nil: Returns a table of markers at current location or nil if none exist.
 function Trail:get_markers_at_location()
-  local path, row, _ = utils.get_location()
+  local path, row, _ = marker.get_cursor_location()
 
   if self.marker_map[path] ~= nil and self.marker_map[path][row] ~= nil then
     return self.marker_map[path][row].markers
