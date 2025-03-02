@@ -121,7 +121,11 @@ end
 ---@param o string: The data to write.
 ---@param path string: The file path to write the data to.
 M.write_to_file = function(o, path)
-  M.create_dir(M.get_dir_name(path))
+  -- Create the directory the file exists in if necessary.
+  local dir = M.get_dir_name(path)
+  if dir then
+    M.create_dir(dir)
+  end
 
   local file, err = io.open(path, "w")
   if file then
