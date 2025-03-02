@@ -304,13 +304,11 @@ function Trail:clear_trail()
   vim.api.nvim_exec_autocmds('User', { pattern = 'TrailMarkerEventPositionUpdate' })
 end
 
---- Prints the trail map to the output.
+--- Prints the trail map.
 function Trail:trail_map()
   print(vim.inspect(self.marker_list))
 end
 
--- Virtual Text
---
 --- Updates virtual text for a specific buffer number.
 --- @param bufnr number: The buffer number to update virtual text for.
 function Trail:virtual_text_update_bufnr(bufnr)
