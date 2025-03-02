@@ -6,8 +6,10 @@ Lua api of the plugin.
 local trail = require("trail_marker.trail")
 local utils = require("trail_marker.utils")
 
+---@class TrailMarker
 local M = {}
 
+---Place a marker on the current trail.
 M.place_marker = function()
   if M.trail ~= nil then
     M.trail:place_marker()
@@ -16,6 +18,7 @@ M.place_marker = function()
   end
 end
 
+---Remove marker at the current cursor location, if one exists.
 M.remove_marker = function()
   if M.trail ~= nil then
     M.trail:remove_marker_at_location()
@@ -24,6 +27,7 @@ M.remove_marker = function()
   end
 end
 
+---Move to the current marker.
 M.current_marker = function()
   if M.trail ~= nil then
     if #M.trail.marker_list == 0 then
@@ -36,6 +40,7 @@ M.current_marker = function()
   end
 end
 
+---Move to the next marker.
 M.next_marker = function()
   if M.trail ~= nil then
     if #M.trail.marker_list == 0 then
@@ -50,6 +55,7 @@ M.next_marker = function()
   end
 end
 
+---Move to the previous marker.
 M.prev_marker = function()
   if M.trail ~= nil then
     if #M.trail.marker_list == 0 then
@@ -64,6 +70,7 @@ M.prev_marker = function()
   end
 end
 
+---Move to the head of the trail.
 M.trail_head = function()
   if M.trail ~= nil then
     if #M.trail.marker_list == 0 then
@@ -76,6 +83,7 @@ M.trail_head = function()
   end
 end
 
+---Move to the end of the trail.
 M.trail_end = function()
   if M.trail ~= nil then
     if #M.trail.marker_list == 0 then
@@ -88,6 +96,7 @@ M.trail_end = function()
   end
 end
 
+---Clears the current trail.
 M.clear_trail = function()
   if M.trail ~= nil then
     M.trail:clear_trail()
@@ -96,6 +105,7 @@ M.clear_trail = function()
   end
 end
 
+---Turns virtual text on.
 M.virtual_text_on = function()
   if M.trail ~= nil then
     M.trail:virtual_text_on()
@@ -104,6 +114,7 @@ M.virtual_text_on = function()
   end
 end
 
+---Turns virtual text off.
 M.virtual_text_off = function()
   if M.trail ~= nil then
     M.trail:virtual_text_off()
@@ -112,6 +123,7 @@ M.virtual_text_off = function()
   end
 end
 
+---Toggles virtual text.
 M.virtual_text_toggle = function()
   if M.trail ~= nil then
     M.trail:virtual_text_toggle()
@@ -120,6 +132,8 @@ M.virtual_text_toggle = function()
   end
 end
 
+---Create a new trail.
+---@param trail_name string
 M.new_trail = function(trail_name)
   local trail_file = string.format("%s/%s", utils.get_current_project_dir(), trail_name)
   local file, _ = io.open(trail_file, "r")
@@ -132,6 +146,8 @@ M.new_trail = function(trail_name)
   end
 end
 
+---Changes the current trail.
+---@param trail_name string
 M.change_trail = function(trail_name)
   local trail_file = string.format("%s/%s", utils.get_current_project_dir(), trail_name)
   local file, _ = io.open(trail_file, "r")
@@ -148,6 +164,8 @@ M.change_trail = function(trail_name)
   end
 end
 
+---Remove a trail.
+---@param trail_name string
 M.remove_trail = function(trail_name)
   local trail_file = string.format("%s/%s", utils.get_current_project_dir(), trail_name)
   local file, _ = io.open(trail_file, "r")
@@ -169,23 +187,34 @@ M.remove_trail = function(trail_name)
   end
 end
 
+---Get the name of the current trail.
+---@return string|nil
 M.get_current_trail = function()
   if M.trail ~= nil then
     return M.trail.name
+  else
+    return nil
   end
 end
 
+---Get the current trail position.
+---@return integer|nil
 M.get_current_position = function()
   if M.trail ~= nil then
     return M.trail.trail_pos
+  else
+    return nil
   end
 end
 
+---Leave the current trail.
 M.leave_trail = function()
   M.trail = nil
   vim.api.nvim_exec_autocmds('User', { pattern = 'TrailMarkerEventTrailChanged' })
 end
 
+---Gets a list of all trails in the current project.
+---@return string[]
 M.get_trail_list = function()
   local trails = {}
 
@@ -280,6 +309,8 @@ local function_map = {
   virtual_text_toggle = M.virtual_text_toggle,
 }
 
+---Gets the names of all trails in the current project.
+---@return string[]
 local function get_project_trail_names()
   local dir_path = utils.get_current_project_dir()
   local trails = {}
