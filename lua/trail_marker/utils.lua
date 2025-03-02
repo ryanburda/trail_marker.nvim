@@ -26,21 +26,20 @@ end
 ---Get the length of a specific line in a file.
 ---@param path string: The full path of the file.
 ---@param row_number number: The line number (1-based).
----@return number: The length of the line.
+---@return number|nil: The length of the line or nil if line doesn't exist.
 M.get_line_length = function(path, row_number)
-  local length = 0
-
   local bufnr = M.get_bufnr_by_path(path)
 
   if bufnr ~= nil then
     local row_content = vim.api.nvim_buf_get_lines(bufnr, row_number - 1, row_number, false)[1]
 
     if row_content ~= nil then
-      length = #row_content
+      return #row_content
     end
   end
 
-  return length
+  -- Return nil if line not found
+  return nil
 end
 
 ---Get the contents of a specific line from a file.
