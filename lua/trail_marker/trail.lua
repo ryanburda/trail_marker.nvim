@@ -366,6 +366,20 @@ function Trail:virtual_text_toggle()
   end
 end
 
+--- Clears virtual text for a specific buffer number.
+function Trail:clear_virtual_text(bufnr)
+  vim.api.nvim_buf_clear_namespace(bufnr, self.ns_id, 0, -1)
+end
+
+--- Updates virtual text for all buffers.
+function Trail:clear_virtual_text_update_all_bufs()
+  local bufnrs = vim.api.nvim_list_bufs()
+
+  for _, bufnr in ipairs(bufnrs) do
+    self:clear_virtual_text(bufnr)
+  end
+end
+
 --- Saves the trail to a file.
 ---
 --- To keep things simple a project will be determined by the the current working directory.
@@ -388,6 +402,11 @@ end
 function Trail:save_trail()
   local save_file = string.format("%s/%s", utils.get_current_project_dir(), self.name)
   utils.write_to_file(utils.serialize(self), save_file)
+end
+
+--- Cleanup to be performed when leaving the trail.
+function Trail:leave_trail()
+  self:clear_virtual_text_update_all_bufs()
 end
 
 return Trail

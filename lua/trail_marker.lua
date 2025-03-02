@@ -209,6 +209,7 @@ end
 
 ---Leave the current trail.
 M.leave_trail = function()
+  M.trail:leave_trail()
   M.trail = nil
   vim.api.nvim_exec_autocmds('User', { pattern = 'TrailMarkerEventTrailChanged' })
 end
