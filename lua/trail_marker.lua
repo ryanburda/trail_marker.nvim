@@ -280,6 +280,8 @@ vim.api.nvim_create_autocmd('User', {
     else
       vim.g.trail_marker_info = nil
     end
+
+    vim.cmd('redrawstatus!')
   end
 })
 
