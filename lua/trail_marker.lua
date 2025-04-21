@@ -266,17 +266,12 @@ vim.api.nvim_create_autocmd('User', {
   callback = function(_)
     -- Create a TrailMarker info string.
     if M.trail ~= nil then
-      local name = M.get_current_trail()
-      local pos = M.get_current_position()
-      local pos_str = tostring(pos)
-
-      if pos == 0 then
-        pos_str = "-"
-      elseif pos == #M.trail.marker_list then
-        pos_str = pos_str .. "*"
-      end
-
-      vim.g.trail_marker_info = string.format("%s:%s", name, pos_str)
+      vim.g.trail_marker_info = string.format(
+        "[%s %i of %s]",
+        M.get_current_trail(),
+        M.get_current_position(),
+        #M.trail.marker_list
+      )
     else
       vim.g.trail_marker_info = nil
     end
