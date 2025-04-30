@@ -12,19 +12,20 @@
 
 
 ## What are Trail Markers
-Trail markers highlight specific points in your code. Multiple markers make a trail. Trail markers are meant
-to be traversed in order to guide you down a specific code path. Multiple trails can exist per project and
-trails are always persisted through restarts, allowing you to go on your favorite hikes again and again.
+Trail markers highlight specific points in your code, forming a sequenced path known as a trail. Designed to guide you
+through a particular execution path, these trails can be created and customized for each project, and they persist even
+after restarts, allowing for repeated exploration of specific code paths.
 
-Trail markers differ from [marks](https://neovim.io/doc/user/motion.html#mark-motions) in that you don't assign them
-a letter. An ordered relationship is fundamental to the way trail markers are designed to be used. With trail
-markers you don't need to remember how you named your marks.
+Unlike traditional [marks](https://neovim.io/doc/user/motion.html#mark-motions), trail markers don't require
+you to assign a letter, freeing you from the need to remember mark names. The core philosophy of trail markers is
+their ordered relationship, making navigation intuitive and efficient.
 
-The [jumplist](https://neovim.io/doc/user/motion.html#jump-motions) is the closest parallel to trail markers. Think of
-trail markers as a more intentional jumplist that only populates when you tell it. No more smashing `<C-o>` to get
-where you need to go.
+While they share some similarities with the [jumplist](https://neovim.io/doc/user/motion.html#jump-motions), trail
+markers offer a more intentional approach. They populate only when you instruct them to, eliminating the need to
+repeatedly press `<C-o>`/`<C-i>` to find your desired location.
 
-Trail markers are a hybrid of marks and the jumplist.
+In essence, trail markers blend the functionalities of marks and the jumplist, providing a powerful navigational tool
+within your Neovim workflow.
 
 TODO: include video
 
